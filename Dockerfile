@@ -9,6 +9,9 @@ RUN a2enmod rewrite
 COPY . /var/www/html/
 
 RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html
+    && chmod -R 755 /var/www/html \
+    && sed -i 's/\r$//' /var/www/html/start.sh \
+    && chmod +x /var/www/html/start.sh
 
 EXPOSE 80
+CMD ["/var/www/html/start.sh"]
