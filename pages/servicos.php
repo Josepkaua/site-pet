@@ -21,51 +21,51 @@ $activePage = 'servicos';
             <h2>Serviços Clínicos</h2>
         </div>
         <div class="services-grid">
-            <div class="service-card">
+            <a href="/pages/consultas.php" class="service-card">
                 <div class="service-icon"><i class="fas fa-stethoscope"></i></div>
                 <h3>Clínica Geral</h3>
                 <p>Consultas clínicas completas para diagnóstico e tratamento.</p>
-            </div>
-            <div class="service-card">
+            </a>
+            <a href="/pages/consultas.php" class="service-card">
                 <div class="service-icon"><i class="fas fa-syringe"></i></div>
                 <h3>Vacinação</h3>
                 <p>Calendário vacinal atualizado para cães, gatos e outros animais.</p>
-            </div>
-            <div class="service-card">
+            </a>
+            <a href="/pages/consultas.php" class="service-card">
                 <div class="service-icon"><i class="fas fa-flask"></i></div>
                 <h3>Exames Laboratoriais</h3>
                 <p>Hemograma, bioquímica, urinálise e parasitológico.</p>
-            </div>
-            <div class="service-card">
+            </a>
+            <a href="/pages/consultas.php" class="service-card">
                 <div class="service-icon"><i class="fas fa-x-ray"></i></div>
                 <h3>Ultrassonografia</h3>
                 <p>Diagnóstico por imagem para avaliação interna detalhada.</p>
-            </div>
-            <div class="service-card">
+            </a>
+            <a href="/pages/consultas.php" class="service-card">
                 <div class="service-icon"><i class="fas fa-cut"></i></div>
                 <h3>Cirurgias</h3>
                 <p>Castração, cirurgias eletivas e emergências cirúrgicas.</p>
-            </div>
-            <div class="service-card">
+            </a>
+            <a href="/pages/consultas.php" class="service-card">
                 <div class="service-icon"><i class="fas fa-teeth"></i></div>
                 <h3>Odontologia</h3>
                 <p>Limpeza dentária, extração e tratamento periodontal.</p>
-            </div>
-            <div class="service-card">
+            </a>
+            <a href="/pages/consultas.php" class="service-card">
                 <div class="service-icon"><i class="fas fa-heartbeat"></i></div>
                 <h3>Cardiologia</h3>
                 <p>Eletrocardiograma e avaliação cardiovascular especializada.</p>
-            </div>
-            <div class="service-card">
+            </a>
+            <a href="/pages/consultas.php" class="service-card">
                 <div class="service-icon"><i class="fas fa-allergies"></i></div>
                 <h3>Dermatologia</h3>
                 <p>Tratamento de alergias, dermatites e doenças de pele.</p>
-            </div>
-            <div class="service-card">
-                <div class="service-icon"><i class="fas fa-ambulance"></i></div>
+            </a>
+            <a href="https://wa.me/<?= CLINIC_WHATS ?>?text=Olá! Preciso de atendimento de urgência." target="_blank" class="service-card">
+                <div class="service-icon" style="background:linear-gradient(135deg,#e74c3c,#c0392b);"><i class="fas fa-ambulance"></i></div>
                 <h3>Urgência & Emergência</h3>
                 <p>Atendimento emergencial com hora marcada nos finais de semana.</p>
-            </div>
+            </a>
         </div>
     </div>
 </section>

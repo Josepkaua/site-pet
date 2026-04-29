@@ -17,6 +17,7 @@ $visitasHoje = $visitas['dias'][date('Y-m-d')] ?? 0;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $adminTitle ?? 'Painel Admin' ?> – <?= CLINIC_NAME ?></title>
+    <link rel="icon" type="image/svg+xml" href="/assets/images/favicon.svg">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="/assets/css/admin.css">
