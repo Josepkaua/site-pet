@@ -12,10 +12,10 @@
         <div class="footer-col">
             <h4>Serviços</h4>
             <ul>
-                <li><a href="/Site-pet/pages/consultas.php">Consultas Veterinárias</a></li>
-                <li><a href="/Site-pet/pages/tosagem.php">Banho & Tosa</a></li>
-                <li><a href="/Site-pet/pages/loja.php">Loja Pet</a></li>
-                <li><a href="/Site-pet/pages/servicos.php">Vacinas & Exames</a></li>
+                <li><a href="/pages/consultas.php">Consultas Veterinárias</a></li>
+                <li><a href="/pages/tosagem.php">Banho & Tosa</a></li>
+                <li><a href="/pages/loja.php">Loja Pet</a></li>
+                <li><a href="/pages/servicos.php">Vacinas & Exames</a></li>
             </ul>
         </div>
         <div class="footer-col">
@@ -35,6 +35,6 @@
         <p>&copy; <?= date('Y') ?> <?= CLINIC_NAME ?>. Todos os direitos reservados.</p>
     </div>
 </footer>
-<script src="/Site-pet/assets/js/main.js"></script>
+<script src="/assets/js/main.js"></script>
 </body>
 </html>

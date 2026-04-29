@@ -56,7 +56,7 @@ function dest_visual(string $nome, string $cat): array {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $pageTitle ?></title>
-    <link rel="stylesheet" href="/Site-pet/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -105,18 +105,18 @@ function dest_visual(string $nome, string $cat): array {
                 <span class="cart-count" id="cartCount" style="display:none;">0</span>
             </button>
 
-            <a href="<?= $logado ? (is_admin() ? '/Site-pet/pages/admin/index.php' : '/Site-pet/pages/painel/index.php') : '/Site-pet/pages/login.php' ?>"
+            <a href="<?= $logado ? (is_admin() ? '/pages/admin/index.php' : '/pages/painel/index.php') : '/pages/login.php' ?>"
                class="btn btn-outline btn-sm">
                 <i class="fas fa-<?= $logado ? 'user-circle' : 'sign-in-alt' ?>"></i>
                 Login
             </a>
 
             <?php if ($logado): ?>
-            <a href="/Site-pet/pages/servicos.php" class="btn btn-primary btn-sm">
+            <a href="/pages/servicos.php" class="btn btn-primary btn-sm">
                 <i class="fas fa-paw"></i> Ver Servicos
             </a>
             <?php else: ?>
-            <a href="/Site-pet/pages/login.php" class="btn btn-primary btn-sm btn-lock"
+            <a href="/pages/login.php" class="btn btn-primary btn-sm btn-lock"
                title="Faca login para ver os servicos">
                 <i class="fas fa-lock"></i> Ver Servicos
             </a>
@@ -139,11 +139,11 @@ function dest_visual(string $nome, string $cat): array {
             <p>Consultas veterinarias, banho &amp; tosa, vacinacao, exames e muito mais. O seu animal merece o melhor cuidado!</p>
             <div class="hero-buttons">
                 <?php if ($logado): ?>
-                <a href="/Site-pet/pages/servicos.php" class="btn btn-primary">
+                <a href="/pages/servicos.php" class="btn btn-primary">
                     <i class="fas fa-stethoscope"></i> Ver Servicos
                 </a>
                 <?php else: ?>
-                <a href="/Site-pet/pages/login.php" class="btn btn-primary">
+                <a href="/pages/login.php" class="btn btn-primary">
                     <i class="fas fa-sign-in-alt"></i> Fazer Login
                 </a>
                 <?php endif; ?>
@@ -153,7 +153,7 @@ function dest_visual(string $nome, string $cat): array {
             </div>
         </div>
         <div class="hero-image">
-            <img src="/Site-pet/assets/images/dra-vet.png" alt="<?= CLINIC_DRA ?>">
+            <img src="/assets/images/dra-vet.png" alt="<?= CLINIC_DRA ?>">
         </div>
     </div>
 </section>
@@ -163,7 +163,7 @@ function dest_visual(string $nome, string $cat): array {
     <div class="container">
         <div class="about-section">
             <div class="about-image">
-                <img src="/Site-pet/assets/images/dra-vet.png" alt="<?= CLINIC_DRA ?>">
+                <img src="/assets/images/dra-vet.png" alt="<?= CLINIC_DRA ?>">
                 <div class="about-badge-float">
                     <i class="fas fa-award"></i>
                     <div>
@@ -186,11 +186,11 @@ function dest_visual(string $nome, string $cat): array {
                 </div>
                 <br>
                 <?php if ($logado): ?>
-                <a href="/Site-pet/pages/servicos.php" class="btn btn-primary">
+                <a href="/pages/servicos.php" class="btn btn-primary">
                     <i class="fas fa-arrow-right"></i> Conhecer a Clinica
                 </a>
                 <?php else: ?>
-                <a href="/Site-pet/pages/login.php" class="btn btn-primary">
+                <a href="/pages/login.php" class="btn btn-primary">
                     <i class="fas fa-sign-in-alt"></i> Fazer Login para Ver
                 </a>
                 <?php endif; ?>
@@ -242,7 +242,7 @@ function dest_visual(string $nome, string $cat): array {
         </div>
 
         <div style="text-align:center;margin-top:36px;">
-            <a href="/Site-pet/pages/loja.php" class="btn btn-outline">
+            <a href="/pages/loja.php" class="btn btn-outline">
                 <i class="fas fa-shopping-bag"></i> Ver toda a loja
             </a>
         </div>
@@ -265,6 +265,6 @@ function dest_visual(string $nome, string $cat): array {
 </a>
 
 <script>const WHATS_NUMBER = '<?= CLINIC_WHATS ?>';</script>
-<script src="/Site-pet/assets/js/main.js"></script>
+<script src="/assets/js/main.js"></script>
 </body>
 </html>

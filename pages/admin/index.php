@@ -160,7 +160,7 @@ $maxVal      = max(array_column($ultimos30, 'val') ?: [1]);
     <div class="panel-card">
         <div class="panel-card-header">
             <h2><i class="fas fa-stethoscope"></i> Proximas Consultas</h2>
-            <a href="/Site-pet/pages/admin/agendamentos.php" class="btn btn-outline btn-sm">Ver todos</a>
+            <a href="/pages/admin/agendamentos.php" class="btn btn-outline btn-sm">Ver todos</a>
         </div>
         <div class="panel-card-body" style="padding:0;">
             <?php if (empty($proxConsultas)): ?>
@@ -187,7 +187,7 @@ $maxVal      = max(array_column($ultimos30, 'val') ?: [1]);
     <div class="panel-card">
         <div class="panel-card-header">
             <h2><i class="fas fa-scissors"></i> Proximos Banho &amp; Tosa</h2>
-            <a href="/Site-pet/pages/admin/tosagem_list.php" class="btn btn-outline btn-sm">Ver todos</a>
+            <a href="/pages/admin/tosagem_list.php" class="btn btn-outline btn-sm">Ver todos</a>
         </div>
         <div class="panel-card-body" style="padding:0;">
             <?php if (empty($proxTosas)): ?>
@@ -216,12 +216,12 @@ $maxVal      = max(array_column($ultimos30, 'val') ?: [1]);
 <div class="panel-card">
     <div class="panel-card-header"><h2><i class="fas fa-link"></i> Atalhos Rapidos</h2></div>
     <div class="panel-card-body" style="display:flex;gap:12px;flex-wrap:wrap;">
-        <a href="/Site-pet/pages/admin/horarios.php"    class="btn btn-outline"><i class="fas fa-clock"        style="color:var(--primary)"></i> Editar Horarios</a>
-        <a href="/Site-pet/pages/admin/precos.php"      class="btn btn-outline"><i class="fas fa-tags"         style="color:var(--primary)"></i> Editar Precos</a>
-        <a href="/Site-pet/pages/admin/mensagens.php"   class="btn btn-outline"><i class="fas fa-envelope"     style="color:var(--primary)"></i> Mensagens <?= $mensNaoLidas ? '<span class="badge badge-pendente">'.$mensNaoLidas.'</span>' : '' ?></a>
-        <a href="/Site-pet/pages/admin/produtos.php"    class="btn btn-outline"><i class="fas fa-shopping-bag" style="color:var(--primary)"></i> Produtos da Loja</a>
-        <a href="/Site-pet/pages/admin/visitas.php"     class="btn btn-outline"><i class="fas fa-eye"          style="color:var(--primary)"></i> Relatorio de Visitas</a>
-        <a href="/Site-pet/index.php" target="_blank"   class="btn btn-primary" style="margin-left:auto;"><i class="fas fa-external-link-alt"></i> Ver Site</a>
+        <a href="/pages/admin/horarios.php"    class="btn btn-outline"><i class="fas fa-clock"        style="color:var(--primary)"></i> Editar Horarios</a>
+        <a href="/pages/admin/precos.php"      class="btn btn-outline"><i class="fas fa-tags"         style="color:var(--primary)"></i> Editar Precos</a>
+        <a href="/pages/admin/mensagens.php"   class="btn btn-outline"><i class="fas fa-envelope"     style="color:var(--primary)"></i> Mensagens <?= $mensNaoLidas ? '<span class="badge badge-pendente">'.$mensNaoLidas.'</span>' : '' ?></a>
+        <a href="/pages/admin/produtos.php"    class="btn btn-outline"><i class="fas fa-shopping-bag" style="color:var(--primary)"></i> Produtos da Loja</a>
+        <a href="/pages/admin/visitas.php"     class="btn btn-outline"><i class="fas fa-eye"          style="color:var(--primary)"></i> Relatorio de Visitas</a>
+        <a href="/index.php" target="_blank"   class="btn btn-primary" style="margin-left:auto;"><i class="fas fa-external-link-alt"></i> Ver Site</a>
     </div>
 </div>
 

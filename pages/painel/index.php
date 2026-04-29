@@ -13,7 +13,7 @@ $u = auth_user();
     <title>Meu Painel – <?= CLINIC_NAME ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="/Site-pet/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/style.css">
     <style>
         .painel-wrap { max-width: 860px; margin: 60px auto; padding: 0 24px; }
         .painel-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:32px; flex-wrap:wrap; gap:12px; }
@@ -26,10 +26,10 @@ $u = auth_user();
 
 <nav class="navbar">
     <div class="nav-container">
-        <a href="/Site-pet/index.php" class="nav-logo"><i class="fas fa-paw"></i> <span><?= CLINIC_NAME ?></span></a>
+        <a href="/index.php" class="nav-logo"><i class="fas fa-paw"></i> <span><?= CLINIC_NAME ?></span></a>
         <div style="display:flex;align-items:center;gap:16px;">
             <span style="font-size:.85rem;color:var(--text-light);">Olá, <strong><?= htmlspecialchars($u['name']) ?></strong></span>
-            <a href="/Site-pet/pages/logout.php" class="btn btn-outline btn-sm"><i class="fas fa-sign-out-alt"></i> Sair</a>
+            <a href="/pages/logout.php" class="btn btn-outline btn-sm"><i class="fas fa-sign-out-alt"></i> Sair</a>
         </div>
     </div>
 </nav>
@@ -41,29 +41,29 @@ $u = auth_user();
             <p>Aqui você pode acompanhar seus agendamentos e informações da clínica.</p>
         </div>
         <?php if (is_admin()): ?>
-        <a href="/Site-pet/pages/admin/index.php" class="btn btn-primary btn-sm">
+        <a href="/pages/admin/index.php" class="btn btn-primary btn-sm">
             <i class="fas fa-arrow-left"></i> Voltar ao Painel Admin
         </a>
         <?php endif; ?>
     </div>
 
     <div class="painel-cards">
-        <a href="/Site-pet/pages/consultas.php" class="service-card">
+        <a href="/pages/consultas.php" class="service-card">
             <div class="service-icon"><i class="fas fa-calendar-check"></i></div>
             <h3>Agendar Consulta</h3>
             <p>Marque sua próxima consulta com a Dra. Milena.</p>
         </a>
-        <a href="/Site-pet/pages/tosagem.php" class="service-card">
+        <a href="/pages/tosagem.php" class="service-card">
             <div class="service-icon"><i class="fas fa-scissors"></i></div>
             <h3>Agendar Banho & Tosa</h3>
             <p>Deixe seu pet sempre cheiroso e arrumado.</p>
         </a>
-        <a href="/Site-pet/pages/loja.php" class="service-card">
+        <a href="/pages/loja.php" class="service-card">
             <div class="service-icon"><i class="fas fa-shopping-cart"></i></div>
             <h3>Loja Pet</h3>
             <p>Produtos para o seu animal de estimação.</p>
         </a>
-        <a href="/Site-pet/pages/contato.php" class="service-card">
+        <a href="/pages/contato.php" class="service-card">
             <div class="service-icon"><i class="fas fa-envelope"></i></div>
             <h3>Falar com a Clínica</h3>
             <p>Tire dúvidas ou envie uma mensagem.</p>
@@ -108,6 +108,6 @@ $u = auth_user();
 </div>
 
 <a href="https://wa.me/<?= CLINIC_WHATS ?>" target="_blank" class="whatsapp-float"><i class="fab fa-whatsapp"></i></a>
-<script src="/Site-pet/assets/js/main.js"></script>
+<script src="/assets/js/main.js"></script>
 </body>
 </html>

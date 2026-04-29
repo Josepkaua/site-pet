@@ -3,7 +3,7 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/auth.php';
 
 if (is_logged()) {
-    header('Location: ' . (is_admin() ? '/Site-pet/pages/admin/index.php' : '/Site-pet/pages/painel/index.php'));
+    header('Location: ' . (is_admin() ? '/pages/admin/index.php' : '/pages/painel/index.php'));
     exit;
 }
 
@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $pass  = trim($_POST['password'] ?? '');
     if (auth_login($email, $pass)) {
-        header('Location: ' . (is_admin() ? '/Site-pet/pages/admin/index.php' : '/Site-pet/pages/painel/index.php'));
+        header('Location: ' . (is_admin() ? '/pages/admin/index.php' : '/pages/painel/index.php'));
         exit;
     }
     $error = 'E-mail ou senha incorretos.';
@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login – <?= CLINIC_NAME ?></title>
-    <link rel="stylesheet" href="/Site-pet/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <span class="login-back">
-            <a href="/Site-pet/index.php"><i class="fas fa-arrow-left"></i> Voltar ao site</a>
+            <a href="/index.php"><i class="fas fa-arrow-left"></i> Voltar ao site</a>
         </span>
     </div>
 </div>

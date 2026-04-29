@@ -35,7 +35,7 @@ function auth_login(string $email, string $password): bool {
 
 function auth_check(): void {
     if (empty($_SESSION['user'])) {
-        header('Location: /Site-pet/pages/login.php');
+        header('Location: /pages/login.php');
         exit;
     }
 }
@@ -43,7 +43,7 @@ function auth_check(): void {
 function auth_admin(): void {
     auth_check();
     if ($_SESSION['user']['role'] !== 'admin') {
-        header('Location: /Site-pet/pages/painel/index.php');
+        header('Location: /pages/painel/index.php');
         exit;
     }
 }
@@ -54,7 +54,7 @@ function auth_user(): array {
 
 function auth_logout(): void {
     session_destroy();
-    header('Location: /Site-pet/pages/login.php');
+    header('Location: /pages/login.php');
     exit;
 }
 
