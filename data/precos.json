@@ -1,0 +1,111 @@
+{
+    "consultas": [
+        {
+            "servico": "Consulta Clínica Geral",
+            "preco": "120.00"
+        },
+        {
+            "servico": "Retorno (até 15 dias)",
+            "preco": "60.00"
+        },
+        {
+            "servico": "Consulta Domiciliar",
+            "preco": "200.00"
+        },
+        {
+            "servico": "Vacina Antirrábica",
+            "preco": "55.00"
+        },
+        {
+            "servico": "V8 \/ V10 (cão)",
+            "preco": "80.00"
+        },
+        {
+            "servico": "Vermifugação",
+            "preco": "40.00"
+        }
+    ],
+    "tosagem": [
+        {
+            "servico": "Banho – Porte P (até 5kg)",
+            "preco": "50.00"
+        },
+        {
+            "servico": "Banho – Porte M (5–15kg)",
+            "preco": "70.00"
+        },
+        {
+            "servico": "Banho – Porte G (15–30kg)",
+            "preco": "90.00"
+        },
+        {
+            "servico": "Banho – Porte GG (>30kg)",
+            "preco": "120.00"
+        },
+        {
+            "servico": "Tosa Higiênica – P",
+            "preco": "40.00"
+        },
+        {
+            "servico": "Tosa Completa – P",
+            "preco": "80.00"
+        },
+        {
+            "servico": "Tosa Completa – G",
+            "preco": "130.00"
+        },
+        {
+            "servico": "Pacote Mensal (4 banhos)",
+            "preco": "180.00"
+        }
+    ],
+    "exames": [
+        {
+            "servico": "Hemograma Completo",
+            "preco": "85.00"
+        },
+        {
+            "servico": "Bioquímica (fígado\/rim)",
+            "preco": "120.00"
+        },
+        {
+            "servico": "Ultrassonografia",
+            "preco": "180.00"
+        },
+        {
+            "servico": "Eletrocardiograma",
+            "preco": "150.00"
+        },
+        {
+            "servico": "Castração (cão\/gata)",
+            "preco": "450.00"
+        },
+        {
+            "servico": "Limpeza Dentária",
+            "preco": "280.00"
+        }
+    ],
+    "_sections": [
+        {
+            "tipo": "consultas",
+            "titulo": "Consultas & Vacinas",
+            "icon": "stethoscope",
+            "color": "#2e9e6b",
+            "builtin": true
+        },
+        {
+            "tipo": "tosagem",
+            "titulo": "Banho & Tosa",
+            "icon": "scissors",
+            "color": "#8e44ad",
+            "builtin": true
+        },
+        {
+            "tipo": "exames",
+            "titulo": "Exames & Procedimentos",
+            "icon": "flask",
+            "color": "#2980b9",
+            "builtin": true
+        }
+    ]
+}
