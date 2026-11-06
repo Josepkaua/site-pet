@@ -17,7 +17,7 @@
             "preco": "55.00"
         },
         {
-            "servico": "V8 \/ V10 (cão)",
+            "servico": "V8 / V10 (cão)",
             "preco": "80.00"
         },
         {
@@ -43,20 +43,56 @@
             "preco": "120.00"
         },
         {
+            "servico": "Banho – Gatos (qualquer porte)",
+            "preco": "80.00"
+        },
+        {
             "servico": "Tosa Higiênica – P",
             "preco": "40.00"
+        },
+        {
+            "servico": "Tosa Higiênica – G",
+            "preco": "60.00"
         },
         {
             "servico": "Tosa Completa – P",
             "preco": "80.00"
         },
         {
+            "servico": "Tosa Completa – M",
+            "preco": "100.00"
+        },
+        {
             "servico": "Tosa Completa – G",
             "preco": "130.00"
         },
         {
+            "servico": "Tosa Completa – GG",
+            "preco": "160.00"
+        },
+        {
             "servico": "Pacote Mensal (4 banhos)",
             "preco": "180.00"
+        },
+        {
+            "servico": "Banho + Tosa Higiênica",
+            "preco": "85.00"
+        },
+        {
+            "servico": "Banho + Tosa Completa – P",
+            "preco": "120.00"
+        },
+        {
+            "servico": "Hidratação de Pelagem",
+            "preco": "35.00"
+        },
+        {
+            "servico": "Limpeza de Ouvidos",
+            "preco": "25.00"
+        },
+        {
+            "servico": "Corte de Unhas",
+            "preco": "20.00"
         }
     ],
     "exames": [
@@ -65,7 +101,7 @@
             "preco": "85.00"
         },
         {
-            "servico": "Bioquímica (fígado\/rim)",
+            "servico": "Bioquímica (fígado/rim)",
             "preco": "120.00"
         },
         {
@@ -77,7 +113,7 @@
             "preco": "150.00"
         },
         {
-            "servico": "Castração (cão\/gata)",
+            "servico": "Castração (cão/gata)",
             "preco": "450.00"
         },
         {

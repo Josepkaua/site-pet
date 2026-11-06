@@ -1,10 +1,20 @@
 <?php
 // Cria todas as tabelas no Nhost/Hasura e as rastreia automaticamente.
-// Pode ser rodado via CLI (php api/setup_db.php) ou via web (GET /api/setup_db.php).
+// Roda SOMENTE via linha de comando (start.sh no deploy): php api/setup_db.php
+// Pela web retorna 404 – antes qualquer visitante podia disparar SQL no banco.
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
 require_once __DIR__ . '/../includes/config.php';
 
-$isCli = php_sapi_name() === 'cli';
+$isCli = true;
 $log   = [];
+
+if (!DB_CONFIGURED) {
+    echo "[SKIP] NHOST_ADMIN_SECRET não definido – setup do banco ignorado." . PHP_EOL;
+    exit(0);
+}
 
 function log_step(string $msg, bool $ok = true): void {
     global $log, $isCli;
@@ -15,12 +25,12 @@ function log_step(string $msg, bool $ok = true): void {
 }
 
 function hasura_sql(string $sql): array {
-    $url = 'https://' . NHOST_SUBDOMAIN . '.hasura.' . NHOST_REGION . '.nhost.run/v2/query';
+    $url = HASURA_BASE . '/v2/query';
     $ch  = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST           => true,
-        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYPEER => true,
         CURLOPT_TIMEOUT        => 30,
         CURLOPT_HTTPHEADER     => [
             'Content-Type: application/json',
@@ -39,12 +49,12 @@ function hasura_sql(string $sql): array {
 }
 
 function hasura_track(string $table): array {
-    $url = 'https://' . NHOST_SUBDOMAIN . '.hasura.' . NHOST_REGION . '.nhost.run/v1/metadata';
+    $url = HASURA_BASE . '/v1/metadata';
     $ch  = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST           => true,
-        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYPEER => true,
         CURLOPT_TIMEOUT        => 30,
         CURLOPT_HTTPHEADER     => [
             'Content-Type: application/json',
@@ -134,29 +144,35 @@ foreach (['agendamentos', 'tosagem_agendamentos', 'contatos', 'produtos'] as $t)
     log_step("Rastrear tabela: $t", $r['ok']);
 }
 
-// ── 3. Inserir produtos iniciais (ignora duplicatas) ─────────────────────────
+// ── 3. Inserir produtos iniciais SOMENTE se a tabela estiver vazia ───────────
+// (antes usava ON CONFLICT sem chave única → duplicava os produtos a cada deploy)
 $seedSql = "
-INSERT INTO public.produtos (nome, descricao, preco, categoria, emoji, estoque) VALUES
-('Racao Premium Cao Adulto 15kg', 'Alta digestibilidade, formula completa e balanceada.',    189.90, 'racao',    '🥩', 50),
-('Racao Premium Gato 3kg',        'Rico em omega-3, pelo brilhante e digestao saudavel.',    79.90,  'racao',    '🐟', 30),
-('Petisco Natural Cao 200g',      'Snack natural sem aditivos, ideal para treinos.',          24.90,  'petisco',  '🦴', 100),
+INSERT INTO public.produtos (nome, descricao, preco, categoria, emoji, estoque)
+SELECT * FROM (VALUES
+('Ração Premium Cão Adulto 15kg', 'Alta digestibilidade, formula completa e balanceada.',    189.90, 'racao',    '🥩', 50),
+('Ração Premium Gato 3kg',        'Rico em omega-3, pelo brilhante e digestao saudavel.',    79.90,  'racao',    '🐟', 30),
+('Petisco Natural Cão 200g',      'Snack natural sem aditivos, ideal para treinos.',          24.90,  'petisco',  '🦴', 100),
 ('Petisco Gato Atum 60g',         'Lanche nutritivo para felinos exigentes.',                12.90,  'petisco',  '🐠', 80),
-('Escova de Remocao de Pelos',    'Reduz a queda de pelos em ate 90%. Ergonomica.',          54.90,  'acessorio','🪮', 25),
+('Escova de Remoção de Pelos',    'Reduz a queda de pelos em ate 90%. Ergonomica.',          54.90,  'acessorio','🪮', 25),
 ('Bola Interativa com Apito',     'Brinquedo resistente para caes de todos os portes.',      34.90,  'brinquedo','🎾', 40),
 ('Shampoo Neutro Pet 500ml',      'Formula suave para banhos frequentes.',                   29.90,  'higiene',  '🛁', 60),
-('Vermifugo Comprimido (4cp)',    'Eficaz contra lombrigas e outros parasitas internos.',    38.90,  'saude',    '💊', 45),
+('Vermífugo Comprimido (4cp)',    'Eficaz contra lombrigas e outros parasitas internos.',    38.90,  'saude',    '💊', 45),
 ('Caminha Pet Tamanho M',         'Confortavel e lavavel, perfeita para caes e gatos.',     119.90, 'acessorio','🏠', 20),
-('Colonia Pet Floral 100ml',      'Fragancia suave que dura ate 48h.',                       22.90,  'higiene',  '🧴', 35),
+('Colônia Pet Floral 100ml',      'Fragancia suave que dura ate 48h.',                       22.90,  'higiene',  '🧴', 35),
 ('Anti-pulgas Pipeta Mensal',     'Protecao de 30 dias contra pulgas e carrapatos.',         45.90,  'saude',    '🐾', 55),
 ('Kit Lacinhos e Gravatas',       'Acessorios fashion para deixar o pet ainda mais fofo.',  19.90,  'acessorio','🎀', 70)
-ON CONFLICT DO NOTHING;
+) AS v(nome, descricao, preco, categoria, emoji, estoque)
+WHERE NOT EXISTS (SELECT 1 FROM public.produtos);
 ";
 
 $r = hasura_sql($seedSql);
 log_step('Inserir produtos iniciais', $r['ok']);
 
-// ── Saída ────────────────────────────────────────────────────────────────────
-if (!$isCli) {
-    header('Content-Type: application/json');
-    echo json_encode(['done' => true, 'log' => $log], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-}
+// ── 4. Índices úteis para o painel ───────────────────────────────────────────
+$r = hasura_sql("
+CREATE INDEX IF NOT EXISTS agendamentos_data_idx ON public.agendamentos (data);
+CREATE INDEX IF NOT EXISTS agendamentos_status_idx ON public.agendamentos (status);
+CREATE INDEX IF NOT EXISTS tosagem_data_idx ON public.tosagem_agendamentos (data);
+CREATE INDEX IF NOT EXISTS contatos_lido_idx ON public.contatos (lido);
+");
+log_step('Criar índices', $r['ok']);

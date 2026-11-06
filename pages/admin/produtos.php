@@ -12,21 +12,25 @@ $msg = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'add') {
     $obj = [
-        'nome'      => htmlspecialchars(trim($_POST['nome']),      ENT_QUOTES),
-        'descricao' => htmlspecialchars(trim($_POST['descricao']), ENT_QUOTES),
-        'preco'     => (float)str_replace(',', '.', $_POST['preco'] ?? '0'),
-        'categoria' => htmlspecialchars(trim($_POST['categoria']), ENT_QUOTES),
-        'emoji'     => htmlspecialchars(trim($_POST['emoji']),     ENT_QUOTES),
-        'estoque'   => (int)($_POST['estoque'] ?? 0),
+        'nome'      => clean_text($_POST['nome'] ?? '', 120),
+        'descricao' => clean_text($_POST['descricao'] ?? '', 300),
+        'preco'     => round(max(0, (float)str_replace(',', '.', (string)($_POST['preco'] ?? '0'))), 2),
+        'categoria' => pick($_POST['categoria'] ?? '', array_keys(CATEGORIAS), 'acessorio'),
+        'emoji'     => mb_substr(clean_text($_POST['emoji'] ?? '', 16), 0, 4) ?: '🐾',
+        'estoque'   => max(0, (int)($_POST['estoque'] ?? 0)),
         'ativo'     => true,
     ];
-    $r  = gql('mutation($obj:produtos_insert_input!){insert_produtos_one(object:$obj){id}}', ['obj'=>$obj]);
-    $msg = $r['ok'] ? 'success|Produto adicionado!' : 'error|Erro ao adicionar. Verifique o Nhost.';
+    if (!$obj['nome'] || $obj['preco'] <= 0) {
+        $msg = 'error|Informe nome e um preço maior que zero.';
+    } else {
+        $r  = gql('mutation($obj:produtos_insert_input!){insert_produtos_one(object:$obj){id}}', ['obj'=>$obj]);
+        $msg = $r['ok'] ? 'success|Produto adicionado!' : 'error|Erro ao adicionar. Verifique a conexão com o banco.';
+    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'toggle') {
     $id    = (int)$_POST['id'];
-    $ativo = $_POST['ativo'] === '1' ? false : true;
+    $ativo = ($_POST['ativo'] ?? '') !== '1';
     $r = gql('mutation($id:bigint!,$a:Boolean!){update_produtos_by_pk(pk_columns:{id:$id},_set:{ativo:$a}){id}}',
              ['id'=>$id,'a'=>$ativo]);
     $msg = $r['ok'] ? 'success|Produto atualizado!' : 'error|Erro ao atualizar.';
@@ -39,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'estoque
         $r = gql('mutation($id:bigint!,$e:Int!){update_produtos_by_pk(pk_columns:{id:$id},_set:{estoque:$e}){id}}',
                  ['id'=>$id,'e'=>$val]);
     } else {
-        $delta = (int)($_POST['delta'] ?? 0);
+        $delta = max(-1, min(1, (int)($_POST['delta'] ?? 0)));
         $r = gql('mutation($id:bigint!,$d:Int!){update_produtos_by_pk(pk_columns:{id:$id},_inc:{estoque:$d}){id}}',
                  ['id'=>$id,'d'=>$delta]);
     }
@@ -48,11 +52,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'estoque
 
 $q     = gql('query { produtos(order_by:{categoria:asc,nome:asc}) { id nome descricao preco categoria emoji estoque ativo } }');
 $prods = $q['data']['produtos'] ?? [];
-$cats  = ['racao'=>'Racao','petisco'=>'Petisco','higiene'=>'Higiene','saude'=>'Saude','acessorio'=>'Acessorio','brinquedo'=>'Brinquedo'];
+$cats  = CATEGORIAS;
 ?>
 
 <?php if ($msg): [$t,$txt] = explode('|',$msg,2); ?>
-<div class="alert alert-<?= $t==='success'?'success':'error' ?>"><i class="fas fa-check-circle"></i> <?= $txt ?></div>
+<div class="alert alert-<?= $t==='success'?'success':'error' ?>"><i class="fas fa-<?= $t==='success'?'check':'exclamation' ?>-circle"></i> <?= e($txt) ?></div>
 <?php endif; ?>
 
 <div class="panel-card" style="margin-bottom:24px;">
@@ -61,7 +65,7 @@ $cats  = ['racao'=>'Racao','petisco'=>'Petisco','higiene'=>'Higiene','saude'=>'S
         <form method="POST">
             <input type="hidden" name="acao" value="add">
             <div class="form-row">
-                <div class="field-group"><label>Nome *</label><input type="text" name="nome" required placeholder="Ex: Racao Premium 15kg"></div>
+                <div class="field-group"><label>Nome *</label><input type="text" name="nome" required placeholder="Ex: Ração Premium 15kg"></div>
                 <div class="field-group"><label>Emoji</label><input type="text" name="emoji" placeholder="🥩" maxlength="4"></div>
             </div>
             <div class="form-row">
@@ -71,11 +75,11 @@ $cats  = ['racao'=>'Racao','petisco'=>'Petisco','higiene'=>'Higiene','saude'=>'S
                         <?php foreach ($cats as $v=>$l): ?><option value="<?= $v ?>"><?= $l ?></option><?php endforeach; ?>
                     </select>
                 </div>
-                <div class="field-group"><label>Preco (R$) *</label><input type="text" name="preco" required placeholder="0,00"></div>
+                <div class="field-group"><label>Preço (R$) *</label><input type="text" name="preco" required placeholder="0,00"></div>
                 <div class="field-group"><label>Estoque inicial</label><input type="number" name="estoque" value="0" min="0"></div>
             </div>
             <div class="form-row full">
-                <div class="field-group"><label>Descricao</label><input type="text" name="descricao" placeholder="Breve descricao"></div>
+                <div class="field-group"><label>Descrição</label><input type="text" name="descricao" placeholder="Breve descrição"></div>
             </div>
             <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Adicionar Produto</button>
         </form>
@@ -90,22 +94,22 @@ $cats  = ['racao'=>'Racao','petisco'=>'Petisco','higiene'=>'Higiene','saude'=>'S
     <div class="panel-card-body" style="padding:0;overflow-x:auto;">
         <?php if (empty($prods)): ?>
             <p style="padding:32px;text-align:center;color:var(--text-light);">
-                <?= !$q['ok'] ? '<i class="fas fa-plug"></i> Nhost nao configurado.' : 'Nenhum produto cadastrado.' ?>
+                <?= !$q['ok'] ? '<i class="fas fa-plug"></i> Não foi possível consultar o banco de dados.' : 'Nenhum produto cadastrado.' ?>
             </p>
         <?php else: ?>
         <table class="data-table">
             <thead>
-                <tr><th>Produto</th><th>Categoria</th><th>Preco</th><th style="min-width:200px;">Estoque</th><th>Status</th><th>Acao</th></tr>
+                <tr><th>Produto</th><th>Categoria</th><th>Preço</th><th style="min-width:200px;">Estoque</th><th>Status</th><th>Ação</th></tr>
             </thead>
             <tbody>
             <?php foreach ($prods as $p): ?>
             <tr style="<?= !$p['ativo'] ? 'opacity:.45' : '' ?>">
                 <td>
-                    <span style="font-size:1.3rem;margin-right:6px;"><?= $p['emoji'] ?></span>
-                    <strong style="font-size:.9rem;"><?= htmlspecialchars($p['nome']) ?></strong>
-                    <br><small style="color:var(--text-light);"><?= htmlspecialchars($p['descricao']) ?></small>
+                    <span style="font-size:1.3rem;margin-right:6px;"><?= e($p['emoji']) ?></span>
+                    <strong style="font-size:.9rem;"><?= e($p['nome']) ?></strong>
+                    <br><small style="color:var(--text-light);"><?= e($p['descricao']) ?></small>
                 </td>
-                <td><span class="badge badge-confirmado"><?= $cats[$p['categoria']] ?? $p['categoria'] ?></span></td>
+                <td><span class="badge badge-confirmado"><?= e($cats[$p['categoria']] ?? $p['categoria']) ?></span></td>
                 <td style="font-weight:600;color:var(--primary);">R$ <?= number_format($p['preco'],2,',','.') ?></td>
 
                 <td>
@@ -113,7 +117,7 @@ $cats  = ['racao'=>'Racao','petisco'=>'Petisco','higiene'=>'Higiene','saude'=>'S
                         <!-- Botao -1 -->
                         <form method="POST" style="display:contents;">
                             <input type="hidden" name="acao"  value="estoque">
-                            <input type="hidden" name="id"    value="<?= $p['id'] ?>">
+                            <input type="hidden" name="id"    value="<?= (int)$p['id'] ?>">
                             <input type="hidden" name="delta" value="-1">
                             <button type="submit" class="estq-btn estq-minus" <?= $p['estoque']<=0?'disabled':'' ?> title="-1">
                                 <i class="fas fa-minus"></i>
@@ -123,8 +127,8 @@ $cats  = ['racao'=>'Racao','petisco'=>'Petisco','higiene'=>'Higiene','saude'=>'S
                         <!-- Input valor absoluto -->
                         <form method="POST" style="display:contents;">
                             <input type="hidden" name="acao" value="estoque">
-                            <input type="hidden" name="id"   value="<?= $p['id'] ?>">
-                            <input type="number" name="valor" value="<?= $p['estoque'] ?>" min="0"
+                            <input type="hidden" name="id"   value="<?= (int)$p['id'] ?>">
+                            <input type="number" name="valor" value="<?= (int)$p['estoque'] ?>" min="0"
                                    class="estq-input" title="Edite e pressione Enter"
                                    onchange="this.form.submit()">
                         </form>
@@ -132,7 +136,7 @@ $cats  = ['racao'=>'Racao','petisco'=>'Petisco','higiene'=>'Higiene','saude'=>'S
                         <!-- Botao +1 -->
                         <form method="POST" style="display:contents;">
                             <input type="hidden" name="acao"  value="estoque">
-                            <input type="hidden" name="id"    value="<?= $p['id'] ?>">
+                            <input type="hidden" name="id"    value="<?= (int)$p['id'] ?>">
                             <input type="hidden" name="delta" value="1">
                             <button type="submit" class="estq-btn estq-plus" title="+1">
                                 <i class="fas fa-plus"></i>
@@ -146,7 +150,7 @@ $cats  = ['racao'=>'Racao','petisco'=>'Petisco','higiene'=>'Higiene','saude'=>'S
                             <?php elseif ($p['estoque'] <= 5): ?>
                                 <i class="fas fa-exclamation-triangle"></i> Baixo
                             <?php elseif ($p['estoque'] <= 20): ?>
-                                <i class="fas fa-exclamation-circle"></i> Medio
+                                <i class="fas fa-exclamation-circle"></i> Médio
                             <?php else: ?>
                                 <i class="fas fa-check-circle"></i> OK
                             <?php endif; ?>
@@ -158,7 +162,7 @@ $cats  = ['racao'=>'Racao','petisco'=>'Petisco','higiene'=>'Higiene','saude'=>'S
                 <td>
                     <form method="POST" style="display:inline;">
                         <input type="hidden" name="acao"  value="toggle">
-                        <input type="hidden" name="id"    value="<?= $p['id'] ?>">
+                        <input type="hidden" name="id"    value="<?= (int)$p['id'] ?>">
                         <input type="hidden" name="ativo" value="<?= $p['ativo']?'1':'0' ?>">
                         <button type="submit" class="btn <?= $p['ativo']?'btn-warning':'btn-success' ?> btn-sm">
                             <i class="fas fa-<?= $p['ativo']?'eye-slash':'eye' ?>"></i>

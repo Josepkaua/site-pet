@@ -8,8 +8,7 @@ $adminTitle = 'Visitas ao Site';
 $adminSub   = 'Acompanhe o tráfego do seu site em tempo real';
 require_once __DIR__ . '/../../includes/admin_layout.php';
 
-$file    = __DIR__ . '/../../data/visitas.json';
-$visitas = json_decode(@file_get_contents($file), true) ?? [];
+$visitas = load_json('visitas');
 
 $hoje   = date('Y-m-d');
 $mes    = date('Y-m');
@@ -101,7 +100,7 @@ $meses = array_slice($meses, 0, 12, true);
                 <tbody>
                 <?php  foreach ($paginas as $pg => $cnt): ?>
                 <tr>
-                    <td style="font-size:.85rem;"><?= htmlspecialchars($pg) ?></td>
+                    <td style="font-size:.85rem;"><?= e($pg) ?></td>
                     <td style="text-align:right;font-weight:600;color:var(--primary);"><?= number_format($cnt) ?></td>
                 </tr>
                 <?php  endforeach; ?>

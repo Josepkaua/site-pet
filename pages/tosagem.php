@@ -1,213 +1,186 @@
 <?php
-require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/bootstrap.php';
 require_once __DIR__ . '/../includes/tracker.php';
 track_visit('Banho e Tosa');
-$pageTitle = 'Banho & Tosa – ' . CLINIC_NAME;
+$pageTitle  = 'Banho & Tosa – ' . CLINIC_NAME;
 $activePage = 'tosagem';
+
+const PORTES = ['P – até 5 kg', 'M – 5 a 15 kg', 'G – 15 a 30 kg', 'GG – acima de 30 kg', 'Gato'];
+const SERVICOS_TOSA = ['Banho', 'Tosa Higiênica', 'Tosa Completa', 'Banho + Tosa Higiênica', 'Banho + Tosa Completa', 'Pacote Mensal'];
+const HORARIOS_TOSA = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'];
 
 $success = $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $obj = [
-        'nome'      => htmlspecialchars(trim($_POST['nome']      ?? ''), ENT_QUOTES),
-        'telefone'  => htmlspecialchars(trim($_POST['telefone']  ?? ''), ENT_QUOTES),
-        'pet_nome'  => htmlspecialchars(trim($_POST['pet_nome']  ?? ''), ENT_QUOTES),
-        'pet_raca'  => htmlspecialchars(trim($_POST['pet_raca']  ?? ''), ENT_QUOTES),
-        'pet_porte' => htmlspecialchars(trim($_POST['pet_porte'] ?? ''), ENT_QUOTES),
-        'servico'   => htmlspecialchars(trim($_POST['servico']   ?? ''), ENT_QUOTES),
-        'data'      => htmlspecialchars(trim($_POST['data']      ?? ''), ENT_QUOTES),
-        'horario'   => htmlspecialchars(trim($_POST['horario']   ?? ''), ENT_QUOTES),
+        'nome'      => clean_text($_POST['nome'] ?? '', 120),
+        'telefone'  => clean_phone($_POST['telefone'] ?? ''),
+        'pet_nome'  => clean_text($_POST['pet_nome'] ?? '', 80),
+        'pet_raca'  => clean_text($_POST['pet_raca'] ?? '', 80),
+        'pet_porte' => pick($_POST['pet_porte'] ?? '', PORTES),
+        'servico'   => pick($_POST['servico'] ?? '', SERVICOS_TOSA),
+        'data'      => clean_future_date($_POST['data'] ?? ''),
+        'horario'   => pick($_POST['horario'] ?? '', HORARIOS_TOSA),
         'status'    => 'pendente',
     ];
 
-    if (!$obj['nome'] || !$obj['telefone'] || !$obj['pet_nome'] || !$obj['data']) {
-        $error = 'Por favor, preencha todos os campos obrigatórios.';
+    if (honeypot_triggered()) {
+        $success = 'Agendamento de banho & tosa realizado! Confirmaremos via WhatsApp em breve.';
+        $_POST = [];
+    } elseif (!$obj['nome'] || !$obj['telefone'] || !$obj['pet_nome'] || !$obj['pet_porte'] || !$obj['servico']) {
+        $error = 'Por favor, preencha todos os campos obrigatórios (verifique o telefone).';
+    } elseif (!$obj['data']) {
+        $error = 'Escolha uma data válida a partir de hoje.';
+    } elseif ((horarios()['tosagem'][(int)date('N', strtotime($obj['data'])) - 1]['status'] ?? '') === 'fechado') {
+        $error = 'Não atendemos banho & tosa nesse dia da semana. Escolha outra data.';
+    } elseif (!rate_limit('tosagem', 5, 3600)) {
+        $error = 'Muitas solicitações em pouco tempo. Tente mais tarde ou fale pelo WhatsApp.';
     } else {
-        $mutation = '
-        mutation InsertTosagem($obj: tosagem_agendamentos_insert_input!) {
-            insert_tosagem_agendamentos_one(object: $obj) { id }
-        }';
-        $result = gql($mutation, ['obj' => $obj]);
+        $result = gql('mutation($obj: tosagem_agendamentos_insert_input!) { insert_tosagem_agendamentos_one(object: $obj) { id } }', ['obj' => $obj]);
         if ($result['ok']) {
-            $success = 'Agendamento de banho & tosa realizado! Confirmaremos via WhatsApp em breve.';
+            $success = 'Banho & tosa de ' . $obj['pet_nome'] . ' agendado! Confirmaremos via WhatsApp em breve.';
+            $_POST = [];
         } else {
-            $error = 'Erro ao agendar. Ligue para ' . CLINIC_PHONE;
+            $error = 'Não foi possível salvar agora. Ligue para ' . CLINIC_PHONE . ' ou use o WhatsApp.';
         }
     }
 }
+
+// Preços da seção "tosagem" (editável no painel), agrupados em Banho / Tosa / Extras
+$itens = [];
+foreach (precos_secoes() as $s) if ($s['tipo'] === 'tosagem') $itens = $s['itens'];
+$grupos = ['Banho' => ['🛁', []], 'Tosa' => ['✂️', []], 'Pacotes & Extras' => ['🌟', []]];
+foreach ($itens as $it) {
+    $n = mb_strtolower($it['servico']);
+    $g = (str_contains($n, '+') || str_contains($n, 'pacote') || !preg_match('/banho|tosa/', $n)) ? 'Pacotes & Extras'
+       : (str_starts_with($n, 'tosa') ? 'Tosa' : 'Banho');
+    $grupos[$g][1][] = $it;
+}
+$h = horarios();
+$statusLabel = ['aberto' => 'Aberto', 'limitado' => 'Limitado', 'fechado' => 'Fechado'];
+
+require __DIR__ . '/../includes/header.php';
 ?>
-<?php require_once __DIR__ . '/../includes/header.php'; ?>
 
 <section class="page-hero">
-    <h1><i class="fas fa-scissors"></i> Banho & Tosa</h1>
-    <p>Seu pet limpo, cheiroso e com aquela carinha feliz que você ama.</p>
+    <h1 class="anim-up"><i class="fas fa-scissors"></i> Banho &amp; Tosa</h1>
+    <p class="anim-up" style="--d:.1s">Seu pet limpo, cheiroso e com aquela carinha feliz que você ama.</p>
 </section>
 
 <section class="section">
     <div class="container">
 
-        <!-- PREÇOS -->
-        <div class="section-header">
+        <div class="section-header reveal">
             <span class="section-tag">Preços</span>
-            <h2>Tabela de Banho & Tosa</h2>
+            <h2>Tabela de Banho &amp; Tosa</h2>
             <p>Valores por porte do animal. Pacotes especiais disponíveis.</p>
         </div>
 
-        <div class="pricing-grid" style="margin-bottom:60px;">
-            <div class="price-card">
+        <div class="pricing-grid spaced" data-reveal-group>
+            <?php $i = 0; foreach ($grupos as $titulo => [$emoji, $lista]): if (!$lista) continue; ?>
+            <div class="price-card reveal <?= $i++ === 1 ? 'featured' : '' ?>">
                 <div class="price-card-header">
-                    <div class="category-icon">🛁</div>
-                    <h3>Banho</h3>
+                    <div class="category-icon" aria-hidden="true"><?= $emoji ?></div>
+                    <h3><?= e($titulo) ?></h3>
                 </div>
                 <table class="price-table">
-                    <tr><td>Porte P – até 5 kg</td><td>R$ 50,00</td></tr>
-                    <tr><td>Porte M – 5 a 15 kg</td><td>R$ 70,00</td></tr>
-                    <tr><td>Porte G – 15 a 30 kg</td><td>R$ 90,00</td></tr>
-                    <tr><td>Porte GG – acima de 30 kg</td><td>R$ 120,00</td></tr>
-                    <tr><td>Gatos (qualquer porte)</td><td>R$ 80,00</td></tr>
+                    <?php foreach ($lista as $it): ?>
+                    <tr><td><?= e($it['servico']) ?></td><td><?= brl($it['preco']) ?></td></tr>
+                    <?php endforeach; ?>
                 </table>
             </div>
-            <div class="price-card featured">
-                <div class="price-card-header">
-                    <div class="category-icon">✂️</div>
-                    <h3>Tosa</h3>
-                </div>
-                <table class="price-table">
-                    <tr><td>Tosa Higiênica – P</td><td>R$ 40,00</td></tr>
-                    <tr><td>Tosa Higiênica – G</td><td>R$ 60,00</td></tr>
-                    <tr><td>Tosa Completa – P</td><td>R$ 80,00</td></tr>
-                    <tr><td>Tosa Completa – M</td><td>R$ 100,00</td></tr>
-                    <tr><td>Tosa Completa – G</td><td>R$ 130,00</td></tr>
-                    <tr><td>Tosa Completa – GG</td><td>R$ 160,00</td></tr>
-                </table>
-            </div>
-            <div class="price-card">
-                <div class="price-card-header">
-                    <div class="category-icon">🌟</div>
-                    <h3>Pacotes & Extras</h3>
-                </div>
-                <table class="price-table">
-                    <tr><td>Banho + Tosa Higiênica</td><td>R$ 85,00</td></tr>
-                    <tr><td>Banho + Tosa Completa – P</td><td>R$ 120,00</td></tr>
-                    <tr><td>Pacote Mensal (4 banhos)</td><td>R$ 180,00</td></tr>
-                    <tr><td>Hidratação de Pelagem</td><td>R$ 35,00</td></tr>
-                    <tr><td>Limpeza de Ouvidos</td><td>R$ 25,00</td></tr>
-                    <tr><td>Corte de Unhas</td><td>R$ 20,00</td></tr>
-                </table>
-            </div>
+            <?php endforeach; ?>
         </div>
 
-        <!-- HORÁRIOS -->
-        <div class="section-header">
+        <div class="section-header reveal">
             <span class="section-tag">Agenda</span>
             <h2>Horários de Atendimento</h2>
         </div>
-        <div class="schedules-grid" style="margin-bottom:60px;">
-            <div class="schedule-card">
-                <div class="schedule-card-header">
-                    <i class="fas fa-scissors"></i>
-                    <h3>Banho & Tosa – Horários</h3>
-                </div>
+        <div class="schedules-grid spaced" data-reveal-group>
+            <div class="schedule-card reveal">
+                <div class="schedule-card-header"><i class="fas fa-scissors"></i><h3>Banho &amp; Tosa – Horários</h3></div>
                 <table class="schedule-table">
                     <thead><tr><th>Dia</th><th>Abertura</th><th>Fechamento</th><th>Status</th></tr></thead>
                     <tbody>
-                        <tr><td>Segunda-feira</td><td>08:00</td><td>17:00</td><td class="status-open"><i class="fas fa-circle"></i> Aberto</td></tr>
-                        <tr><td>Terça-feira</td><td>08:00</td><td>17:00</td><td class="status-open"><i class="fas fa-circle"></i> Aberto</td></tr>
-                        <tr><td>Quarta-feira</td><td>08:00</td><td>17:00</td><td class="status-open"><i class="fas fa-circle"></i> Aberto</td></tr>
-                        <tr><td>Quinta-feira</td><td>08:00</td><td>17:00</td><td class="status-open"><i class="fas fa-circle"></i> Aberto</td></tr>
-                        <tr><td>Sexta-feira</td><td>08:00</td><td>16:00</td><td class="status-open"><i class="fas fa-circle"></i> Aberto</td></tr>
-                        <tr><td>Sábado</td><td>08:00</td><td>14:00</td><td class="status-limit"><i class="fas fa-circle"></i> Limitado</td></tr>
-                        <tr><td>Domingo</td><td>–</td><td>–</td><td class="status-closed"><i class="fas fa-circle"></i> Fechado</td></tr>
+                    <?php foreach ($h['tosagem'] ?? [] as $idx => $r): $st = $r['status'] ?? 'aberto'; $fech = $st === 'fechado'; ?>
+                        <tr <?= (int)date('N') === $idx + 1 ? 'class="is-today"' : '' ?>>
+                            <td><?= e($r['dia']) ?></td>
+                            <td><?= $fech ? '–' : e($r['abertura']) ?></td>
+                            <td><?= $fech ? '–' : e($r['fechamento']) ?></td>
+                            <td class="status-<?= $st === 'aberto' ? 'open' : ($st === 'limitado' ? 'limit' : 'closed') ?>"><i class="fas fa-circle"></i> <?= $statusLabel[$st] ?? e($st) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
-            <div class="form-card" style="padding:28px;">
-                <h4 style="margin-bottom:16px;"><i class="fas fa-info-circle" style="color:var(--primary)"></i> Dicas Importantes</h4>
-                <p style="font-size:.85rem;color:var(--text-light);margin-bottom:10px;">🐾 Leve o pet em jejum de pelo menos 2h antes do banho.</p>
-                <p style="font-size:.85rem;color:var(--text-light);margin-bottom:10px;">💉 Vacina antirrábica obrigatória e em dia.</p>
-                <p style="font-size:.85rem;color:var(--text-light);margin-bottom:10px;">⏰ Serviço dura de 1h a 3h dependendo do porte.</p>
-                <p style="font-size:.85rem;color:var(--text-light);margin-bottom:10px;">📱 Avisamos quando seu pet estiver pronto.</p>
-                <p style="font-size:.85rem;color:var(--text-light);">🐶 Agendamento obrigatório – sem hora marcada não atendemos.</p>
+            <div class="form-card info-card reveal">
+                <h4><i class="fas fa-info-circle"></i> Dicas Importantes</h4>
+                <ul class="emoji-list">
+                    <li><span>🐾</span> Leve o pet em jejum de pelo menos 2h antes do banho.</li>
+                    <li><span>💉</span> Vacina antirrábica obrigatória e em dia.</li>
+                    <li><span>⏰</span> Serviço dura de 1h a 3h dependendo do porte.</li>
+                    <li><span>📱</span> Avisamos quando seu pet estiver pronto.</li>
+                    <li><span>🐶</span> Agendamento obrigatório – sem hora marcada não atendemos.</li>
+                </ul>
             </div>
         </div>
 
-        <!-- FORM AGENDAMENTO -->
-        <div class="section-header">
+        <div class="section-header reveal" id="agendar">
             <span class="section-tag">Agendar</span>
             <h2>Marque seu Horário</h2>
         </div>
 
-        <div class="form-card">
-            <?php if ($success): ?>
-                <div class="alert alert-success"><i class="fas fa-check-circle"></i> <?= $success ?></div>
-            <?php endif; ?>
-            <?php if ($error): ?>
-                <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <?= $error ?></div>
-            <?php endif; ?>
+        <div class="form-card form-narrow reveal">
+            <?php if ($success): ?><div class="alert alert-success" role="status"><i class="fas fa-check-circle"></i> <?= e($success) ?></div><?php endif; ?>
+            <?php if ($error):   ?><div class="alert alert-error" role="alert"><i class="fas fa-exclamation-circle"></i> <?= e($error) ?></div><?php endif; ?>
 
-            <form method="POST">
+            <form method="POST" action="#agendar" class="js-submit-loading">
+                <?= honeypot_field() ?>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>Nome do Tutor *</label>
-                        <input type="text" name="nome" required placeholder="Nome completo">
+                        <label for="t-nome">Nome do Tutor *</label>
+                        <input id="t-nome" type="text" name="nome" required maxlength="120" autocomplete="name" placeholder="Nome completo" value="<?= old('nome') ?>">
                     </div>
                     <div class="form-group">
-                        <label>Telefone / WhatsApp *</label>
-                        <input type="tel" name="telefone" required placeholder="(11) 99999-9999">
+                        <label for="t-tel">Telefone / WhatsApp *</label>
+                        <input id="t-tel" type="tel" name="telefone" required maxlength="30" autocomplete="tel" data-mask="phone" placeholder="(11) 99999-9999" value="<?= old('telefone') ?>">
                     </div>
                     <div class="form-group">
-                        <label>Nome do Pet *</label>
-                        <input type="text" name="pet_nome" required placeholder="Nome do animal">
+                        <label for="t-pet">Nome do Pet *</label>
+                        <input id="t-pet" type="text" name="pet_nome" required maxlength="80" placeholder="Nome do animal" value="<?= old('pet_nome') ?>">
                     </div>
                     <div class="form-group">
-                        <label>Raça</label>
-                        <input type="text" name="pet_raca" placeholder="Raça do animal">
+                        <label for="t-raca">Raça</label>
+                        <input id="t-raca" type="text" name="pet_raca" maxlength="80" placeholder="Raça do animal" value="<?= old('pet_raca') ?>">
                     </div>
                     <div class="form-group">
-                        <label>Porte do Pet *</label>
-                        <select name="pet_porte" required>
+                        <label for="t-porte">Porte do Pet *</label>
+                        <select id="t-porte" name="pet_porte" required>
                             <option value="">Selecione...</option>
-                            <option>P – até 5 kg</option>
-                            <option>M – 5 a 15 kg</option>
-                            <option>G – 15 a 30 kg</option>
-                            <option>GG – acima de 30 kg</option>
-                            <option>Gato</option>
+                            <?php foreach (PORTES as $o): ?><option <?= selected('pet_porte', $o) ?>><?= e($o) ?></option><?php endforeach; ?>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Serviço *</label>
-                        <select name="servico" required>
+                        <label for="t-serv">Serviço *</label>
+                        <select id="t-serv" name="servico" required>
                             <option value="">Selecione...</option>
-                            <option>Banho</option>
-                            <option>Tosa Higiênica</option>
-                            <option>Tosa Completa</option>
-                            <option>Banho + Tosa Higiênica</option>
-                            <option>Banho + Tosa Completa</option>
-                            <option>Pacote Mensal</option>
+                            <?php foreach (SERVICOS_TOSA as $o): ?><option <?= selected('servico', $o) ?>><?= e($o) ?></option><?php endforeach; ?>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Data Preferida *</label>
-                        <input type="date" name="data" min="<?= date('Y-m-d') ?>" required>
+                        <label for="t-data">Data Preferida *</label>
+                        <input id="t-data" type="date" name="data" min="<?= date('Y-m-d') ?>" max="<?= date('Y-m-d', strtotime('+1 year')) ?>" required value="<?= old('data') ?>">
                     </div>
                     <div class="form-group">
-                        <label>Horário Preferido</label>
-                        <select name="horario">
+                        <label for="t-hora">Horário Preferido</label>
+                        <select id="t-hora" name="horario">
                             <option value="">Qualquer horário</option>
-                            <option>08:00</option>
-                            <option>09:00</option>
-                            <option>10:00</option>
-                            <option>11:00</option>
-                            <option>13:00</option>
-                            <option>14:00</option>
-                            <option>15:00</option>
-                            <option>16:00</option>
+                            <?php foreach (HORARIOS_TOSA as $o): ?><option <?= selected('horario', $o) ?>><?= e($o) ?></option><?php endforeach; ?>
                         </select>
                     </div>
                 </div>
-                <br>
-                <button type="submit" class="btn btn-primary" style="width:100%;">
-                    <i class="fas fa-scissors"></i> Agendar Banho & Tosa
+                <button type="submit" class="btn btn-primary btn-block btn-shine">
+                    <i class="fas fa-scissors"></i> Agendar Banho &amp; Tosa
                 </button>
             </form>
         </div>
@@ -215,6 +188,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </section>
 
-<a href="https://wa.me/<?= CLINIC_WHATS ?>" target="_blank" class="whatsapp-float"><i class="fab fa-whatsapp"></i></a>
-
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+<?php require __DIR__ . '/../includes/footer.php'; ?>

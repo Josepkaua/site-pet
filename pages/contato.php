@@ -1,129 +1,123 @@
 <?php
-require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/bootstrap.php';
 require_once __DIR__ . '/../includes/tracker.php';
 track_visit('Contato');
-$pageTitle = 'Contato – ' . CLINIC_NAME;
+$pageTitle  = 'Contato – ' . CLINIC_NAME;
 $activePage = 'contato';
+
+const ASSUNTOS = ['Dúvida sobre serviços', 'Informações sobre preços', 'Agendamento', 'Elogio', 'Reclamação', 'Outro'];
 
 $success = $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $obj = [
-        'nome'     => htmlspecialchars(trim($_POST['nome']     ?? ''), ENT_QUOTES),
-        'email'    => htmlspecialchars(trim($_POST['email']    ?? ''), ENT_QUOTES),
-        'assunto'  => htmlspecialchars(trim($_POST['assunto']  ?? ''), ENT_QUOTES),
-        'mensagem' => htmlspecialchars(trim($_POST['mensagem'] ?? ''), ENT_QUOTES),
+        'nome'     => clean_text($_POST['nome'] ?? '', 120),
+        'email'    => clean_email($_POST['email'] ?? ''),
+        'assunto'  => pick($_POST['assunto'] ?? '', ASSUNTOS, 'Outro'),
+        'mensagem' => clean_text($_POST['mensagem'] ?? '', 3000, true),
         'lido'     => false,
     ];
 
-    if (!$obj['nome'] || !$obj['email'] || !$obj['mensagem']) {
+    if (honeypot_triggered()) {
+        $success = 'Mensagem enviada com sucesso! Responderemos em breve.';
+        $_POST = [];
+    } elseif (!$obj['nome'] || !$obj['mensagem']) {
         $error = 'Por favor, preencha todos os campos obrigatórios.';
+    } elseif (!$obj['email']) {
+        $error = 'Informe um e-mail válido para podermos responder.';
+    } elseif (mb_strlen($obj['mensagem']) < 10) {
+        $error = 'Sua mensagem está muito curta. Conte um pouco mais 🙂';
+    } elseif (!rate_limit('contato', 5, 3600)) {
+        $error = 'Muitas mensagens em pouco tempo. Tente mais tarde ou fale pelo WhatsApp.';
     } else {
-        $mutation = '
-        mutation InsertContato($obj: contatos_insert_input!) {
-            insert_contatos_one(object: $obj) { id }
-        }';
-        $result = gql($mutation, ['obj' => $obj]);
+        $result = gql('mutation($obj: contatos_insert_input!) { insert_contatos_one(object: $obj) { id } }', ['obj' => $obj]);
         if ($result['ok']) {
             $success = 'Mensagem enviada com sucesso! Responderemos em breve.';
+            $_POST = [];
         } else {
-            $error = 'Erro ao enviar. Ligue para ' . CLINIC_PHONE;
+            $error = 'Não foi possível enviar agora. Ligue para ' . CLINIC_PHONE . ' ou use o WhatsApp.';
         }
     }
 }
+
+require __DIR__ . '/../includes/header.php';
 ?>
-<?php require_once __DIR__ . '/../includes/header.php'; ?>
 
 <section class="page-hero">
-    <h1><i class="fas fa-envelope"></i> Entre em Contato</h1>
-    <p>Estamos aqui para tirar suas dúvidas e agendar o atendimento do seu pet.</p>
+    <h1 class="anim-up"><i class="fas fa-envelope"></i> Entre em Contato</h1>
+    <p class="anim-up" style="--d:.1s">Estamos aqui para tirar suas dúvidas e agendar o atendimento do seu pet.</p>
 </section>
 
 <section class="section">
     <div class="container">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start;" class="contact-layout">
+        <div class="split-layout split-even">
 
-            <!-- INFO -->
-            <div style="display:flex;flex-direction:column;gap:24px;">
-                <div class="form-card" style="padding:32px;">
-                    <h3 style="margin-bottom:20px;font-size:1.1rem;">
-                        <i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> Localização
-                    </h3>
-                    <p style="color:var(--text-light);margin-bottom:10px;display:flex;align-items:center;gap:8px;">
-                        <i class="fas fa-map-marker-alt" style="color:var(--primary)"></i><?= CLINIC_ADDRESS ?>
-                    </p>
-                    <p style="color:var(--text-light);margin-bottom:10px;display:flex;align-items:center;gap:8px;">
-                        <i class="fas fa-phone" style="color:var(--primary)"></i><?= CLINIC_PHONE ?>
-                    </p>
-                    <p style="color:var(--text-light);display:flex;align-items:center;gap:8px;">
-                        <i class="fas fa-envelope" style="color:var(--primary)"></i><?= CLINIC_EMAIL ?>
-                    </p>
+            <div class="side-stack">
+                <div class="form-card contact-card reveal">
+                    <h3><i class="fas fa-location-dot"></i> Onde estamos</h3>
+                    <a class="contact-line" href="https://www.google.com/maps/search/?api=1&query=<?= rawurlencode(CLINIC_ADDRESS) ?>" target="_blank" rel="noopener noreferrer">
+                        <span class="contact-ico"><i class="fas fa-map-marker-alt"></i></span><?= e(CLINIC_ADDRESS) ?>
+                    </a>
+                    <a class="contact-line" href="tel:+<?= e(CLINIC_WHATS) ?>">
+                        <span class="contact-ico"><i class="fas fa-phone"></i></span><?= e(CLINIC_PHONE) ?>
+                    </a>
+                    <a class="contact-line" href="mailto:<?= e(CLINIC_EMAIL) ?>">
+                        <span class="contact-ico"><i class="fas fa-envelope"></i></span><?= e(CLINIC_EMAIL) ?>
+                    </a>
                 </div>
 
-                <div class="schedule-card">
-                    <div class="schedule-card-header">
-                        <i class="fas fa-clock"></i>
-                        <h3>Horários de Funcionamento</h3>
-                    </div>
+                <div class="schedule-card reveal">
+                    <div class="schedule-card-header"><i class="fas fa-clock"></i><h3>Horários de Funcionamento</h3></div>
                     <table class="schedule-table">
-                        <thead><tr><th>Dia</th><th>Horário</th></tr></thead>
+                        <thead><tr><th>Dia</th><th>Consultas</th></tr></thead>
                         <tbody>
-                            <tr><td>Segunda a Sexta</td><td>08:00 – 19:00</td></tr>
-                            <tr><td>Sábado</td><td>08:00 – 17:00</td></tr>
-                            <tr><td>Domingo</td><td>09:00 – 13:00 (urgência)</td></tr>
+                        <?php foreach (horario_resumo('consultas') as $dia => $hr): ?>
+                            <tr><td><?= e($dia) ?></td><td><?= e($hr) ?></td></tr>
+                        <?php endforeach; ?>
                         </tbody>
                     </table>
+                    <?php if (!empty(horarios()['urgencia'])): ?>
+                    <p class="schedule-note"><i class="fas fa-truck-medical"></i> Urgência:
+                        <?= e(implode(' · ', array_map(fn($u) => $u['periodo'] . ' ' . $u['abertura'] . '–' . $u['fechamento'], horarios()['urgencia']))) ?>
+                    </p>
+                    <?php endif; ?>
                 </div>
 
-                <div style="display:flex;flex-direction:column;gap:12px;">
-                    <a href="https://wa.me/<?= CLINIC_WHATS ?>" target="_blank" class="btn btn-accent">
-                        <i class="fab fa-whatsapp"></i> Falar pelo WhatsApp
-                    </a>
-                    <a href="https://instagram.com" target="_blank" class="btn btn-outline">
-                        <i class="fab fa-instagram"></i> Seguir no Instagram
-                    </a>
+                <div class="btn-stack reveal">
+                    <a href="<?= e(whats_link()) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-accent"><i class="fab fa-whatsapp"></i> Falar pelo WhatsApp</a>
+                    <a href="<?= e(safe_url(CLINIC_INSTAGRAM)) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline"><i class="fab fa-instagram"></i> Seguir no Instagram</a>
                 </div>
             </div>
 
-            <!-- FORM -->
-            <div class="form-card">
-                <h2 style="margin-bottom:24px;font-size:1.3rem;">Envie uma Mensagem</h2>
+            <div class="form-card reveal" id="mensagem">
+                <h2 class="form-title">Envie uma Mensagem</h2>
 
-                <?php if ($success): ?>
-                    <div class="alert alert-success"><i class="fas fa-check-circle"></i> <?= $success ?></div>
-                <?php endif; ?>
-                <?php if ($error): ?>
-                    <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <?= $error ?></div>
-                <?php endif; ?>
+                <?php if ($success): ?><div class="alert alert-success" role="status"><i class="fas fa-check-circle"></i> <?= e($success) ?></div><?php endif; ?>
+                <?php if ($error):   ?><div class="alert alert-error" role="alert"><i class="fas fa-exclamation-circle"></i> <?= e($error) ?></div><?php endif; ?>
 
-                <form method="POST">
+                <form method="POST" action="#mensagem" class="js-submit-loading">
+                    <?= honeypot_field() ?>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label>Nome *</label>
-                            <input type="text" name="nome" required placeholder="Seu nome">
+                            <label for="c-nome">Nome *</label>
+                            <input id="c-nome" type="text" name="nome" required maxlength="120" autocomplete="name" placeholder="Seu nome" value="<?= old('nome') ?>">
                         </div>
                         <div class="form-group">
-                            <label>E-mail *</label>
-                            <input type="email" name="email" required placeholder="seu@email.com">
+                            <label for="c-email">E-mail *</label>
+                            <input id="c-email" type="email" name="email" required maxlength="160" autocomplete="email" placeholder="seu@email.com" value="<?= old('email') ?>">
                         </div>
                         <div class="form-group full">
-                            <label>Assunto</label>
-                            <select name="assunto">
-                                <option>Dúvida sobre serviços</option>
-                                <option>Informações sobre preços</option>
-                                <option>Agendamento</option>
-                                <option>Elogio</option>
-                                <option>Reclamação</option>
-                                <option>Outro</option>
+                            <label for="c-assunto">Assunto</label>
+                            <select id="c-assunto" name="assunto">
+                                <?php foreach (ASSUNTOS as $o): ?><option <?= selected('assunto', $o) ?>><?= e($o) ?></option><?php endforeach; ?>
                             </select>
                         </div>
                         <div class="form-group full">
-                            <label>Mensagem *</label>
-                            <textarea name="mensagem" required placeholder="Escreva sua mensagem..."></textarea>
+                            <label for="c-msg">Mensagem *</label>
+                            <textarea id="c-msg" name="mensagem" required minlength="10" maxlength="3000" placeholder="Escreva sua mensagem..." data-counter><?= old('mensagem') ?></textarea>
                         </div>
                     </div>
-                    <br>
-                    <button type="submit" class="btn btn-primary" style="width:100%;">
+                    <button type="submit" class="btn btn-primary btn-block btn-shine">
                         <i class="fas fa-paper-plane"></i> Enviar Mensagem
                     </button>
                 </form>
@@ -133,8 +127,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </section>
 
-<style>@media(max-width:900px){.contact-layout{grid-template-columns:1fr!important}}</style>
-
-<a href="https://wa.me/<?= CLINIC_WHATS ?>" target="_blank" class="whatsapp-float"><i class="fab fa-whatsapp"></i></a>
-
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+<?php require __DIR__ . '/../includes/footer.php'; ?>

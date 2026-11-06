@@ -8,8 +8,8 @@ $adminTitle = 'Tabela de Precos';
 $adminSub   = 'Edite os precos exibidos no site para os clientes';
 require_once __DIR__ . '/../../includes/admin_layout.php';
 
-$file   = __DIR__ . '/../../data/precos.json';
-$precos = json_decode(file_get_contents($file), true) ?? [];
+$file   = data_path('precos');
+$precos = load_json('precos');
 $success = $error = '';
 
 // Secoes builtin + customizadas
@@ -22,7 +22,7 @@ if (empty($precos['_sections'])) {
         ['tipo'=>'tosagem',  'titulo'=>'Banho & Tosa',        'icon'=>'scissors',   'color'=>'#8e44ad','builtin'=>true],
         ['tipo'=>'exames',   'titulo'=>'Exames & Procedimentos','icon'=>'flask',     'color'=>'#2980b9','builtin'=>true],
     ];
-    file_put_contents($file, json_encode($precos, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    save_json('precos', $precos);
 }
 
 // Salvar itens de uma secao
@@ -33,31 +33,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'save') 
     if ($tipo && in_array($tipo, $tiposValidos)) {
         $rows = [];
         foreach ($_POST['servico'] ?? [] as $i => $sv) {
-            $sv = htmlspecialchars(trim($sv), ENT_QUOTES);
-            $pr = number_format((float)str_replace(',', '.', $_POST['preco'][$i] ?? '0'), 2, '.', '');
+            $sv = clean_text($sv, 120);
+            $pr = number_format(max(0, min(99999, (float)str_replace(',', '.', (string)($_POST['preco'][$i] ?? '0')))), 2, '.', '');
             if ($sv) $rows[] = ['servico'=>$sv, 'preco'=>$pr];
         }
         $precos[$tipo] = $rows;
-        if (file_put_contents($file, json_encode($precos, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE))) {
+        if (save_json('precos', $precos)) {
             $success = 'Precos da secao atualizados!';
-            $precos  = json_decode(file_get_contents($file), true);
+            $precos  = load_json('precos');
         } else { $error = 'Erro ao salvar. Verifique permissoes da pasta data/.'; }
     }
 }
 
 // Adicionar nova secao
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'add_section') {
-    $titulo = htmlspecialchars(trim($_POST['titulo'] ?? ''), ENT_QUOTES);
+    $titulo = clean_text($_POST['titulo'] ?? '', 60);
     $icon   = preg_replace('/[^a-z0-9-]/', '', $_POST['icon']   ?? 'list');
     $color  = preg_match('/^#[0-9a-fA-F]{6}$/', $_POST['color'] ?? '') ? $_POST['color'] : '#555555';
     if ($titulo) {
         // Gera slug unico
-        $slug = 'custom_' . time();
+        $slug = 'custom_' . time() . random_int(10, 99);
         $precos['_sections'][] = ['tipo'=>$slug,'titulo'=>$titulo,'icon'=>$icon,'color'=>$color,'builtin'=>false];
         $precos[$slug] = [];
-        if (file_put_contents($file, json_encode($precos, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE))) {
+        if (save_json('precos', $precos)) {
             $success = 'Tabela "' . $titulo . '" criada com sucesso!';
-            $precos  = json_decode(file_get_contents($file), true);
+            $precos  = load_json('precos');
         }
     }
 }
@@ -72,9 +72,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'del_sec
     if ($sec && !($sec['builtin'] ?? false)) {
         $precos['_sections'] = array_values(array_filter($precos['_sections'], fn($s) => $s['tipo'] !== $tipo));
         unset($precos[$tipo]);
-        if (file_put_contents($file, json_encode($precos, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE))) {
+        if (save_json('precos', $precos)) {
             $success = 'Tabela removida.';
-            $precos  = json_decode(file_get_contents($file), true);
+            $precos  = load_json('precos');
         }
     }
 }
@@ -91,10 +91,10 @@ $iconOptions = [
 ?>
 
 <?php if ($success): ?>
-<div class="alert alert-success"><i class="fas fa-check-circle"></i> <?= $success ?></div>
+<div class="alert alert-success"><i class="fas fa-check-circle"></i> <?= e($success) ?></div>
 <?php endif; ?>
 <?php if ($error): ?>
-<div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <?= $error ?></div>
+<div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <?= e($error) ?></div>
 <?php endif; ?>
 
 <style>
@@ -363,16 +363,16 @@ foreach ($sections as $sec):
     <div class="preco-header" style="background:<?= $grad ?>;">
         <div class="preco-header-left">
             <div class="preco-header-icon">
-                <i class="fas fa-<?= htmlspecialchars($icon) ?>"></i>
+                <i class="fas fa-<?= e($icon) ?>"></i>
             </div>
             <div>
-                <h2><?= htmlspecialchars($titulo) ?></h2>
+                <h2><?= e($titulo) ?></h2>
                 <p><?= count($rows) ?> item(s) cadastrado(s)</p>
             </div>
         </div>
         <div class="preco-header-actions">
             <?php if (!$builtin): ?>
-            <form method="POST" style="display:inline;" onsubmit="return confirm('Remover a tabela &quot;<?= htmlspecialchars($titulo) ?>&quot;? Esta acao nao pode ser desfeita.')">
+            <form method="POST" style="display:inline;" onsubmit="return confirm('Remover a tabela &quot;<?= e($titulo) ?>&quot;? Esta acao nao pode ser desfeita.')">
                 <input type="hidden" name="acao" value="del_section">
                 <input type="hidden" name="tipo" value="<?= $tipo ?>">
                 <button type="submit" class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border:1.5px solid rgba(255,255,255,.4);">
@@ -403,7 +403,7 @@ foreach ($sections as $sec):
                     <input type="text"
                            class="preco-input-nome"
                            name="servico[]"
-                           value="<?= htmlspecialchars($r['servico']) ?>"
+                           value="<?= e($r['servico']) ?>"
                            placeholder="Nome do servico"
                            required>
                     <div style="display:flex;align-items:center;gap:4px;">

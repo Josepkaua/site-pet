@@ -6,12 +6,10 @@ auth_admin();
 $u = auth_user();
 $adminPage  = 'dashboard';
 $adminTitle = 'Dashboard';
-$adminSub   = 'Bem-vinda, ' . (explode(' ', $u['name'] ?? 'Dra.')[1] ?? 'Dra.') . '! Aqui esta o resumo do dia.';
+$adminSub   = 'Bem-vinda, ' . (explode(' ', $u['name'] ?? 'Dra.')[1] ?? 'Dra.') . '! Aqui está o resumo do dia.';
 require_once __DIR__ . '/../../includes/admin_layout.php';
-require_once __DIR__ . '/../../includes/tracker.php';
 
-$dataDir = __DIR__ . '/../../data/';
-$visitas = json_decode(@file_get_contents($dataDir . 'visitas.json'), true) ?? [];
+$visitas = load_json('visitas');
 
 $hoje = date('Y-m-d');
 $agendHoje = $agendPend = $tosaHoje = $tosaPend = $mensNaoLidas = 0;
@@ -46,7 +44,7 @@ $visitasHoje  = $visitas['dias'][$hoje] ?? 0;
 $visitasMes   = $visitas['meses'][date('Y-m')] ?? 0;
 $visitasTotal = $visitas['total'] ?? 0;
 
-// Ultimos 30 dias para grafico
+// Últimos 30 dias para grafico
 $diasData = is_array($visitas['dias'] ?? null) ? $visitas['dias'] : [];
 $ultimos30 = [];
 for ($i = 29; $i >= 0; $i--) {
@@ -87,7 +85,7 @@ $maxVal      = max(array_column($ultimos30, 'val') ?: [1]);
     </div>
     <div class="stat-card orange">
         <div class="stat-icon"><i class="fas fa-clock"></i></div>
-        <div class="stat-info"><strong><?= $totalPend ?></strong><span>Aguardando Confirmacao</span></div>
+        <div class="stat-info"><strong><?= $totalPend ?></strong><span>Aguardando Confirmação</span></div>
     </div>
     <div class="stat-card blue">
         <div class="stat-icon"><i class="fas fa-scissors"></i></div>
@@ -95,7 +93,7 @@ $maxVal      = max(array_column($ultimos30, 'val') ?: [1]);
     </div>
     <div class="stat-card red">
         <div class="stat-icon"><i class="fas fa-envelope"></i></div>
-        <div class="stat-info"><strong><?= $mensNaoLidas ?></strong><span>Mensagens Nao Lidas</span></div>
+        <div class="stat-info"><strong><?= $mensNaoLidas ?></strong><span>Mensagens Não Lidas</span></div>
     </div>
     <div class="stat-card teal">
         <div class="stat-icon"><i class="fas fa-eye"></i></div>
@@ -106,9 +104,9 @@ $maxVal      = max(array_column($ultimos30, 'val') ?: [1]);
 <!-- GRAFICO DE VISITAS + TABELA -->
 <div class="panel-card" style="margin-bottom:28px;">
     <div class="panel-card-header">
-        <h2><i class="fas fa-chart-area"></i> Visitas ao Site – Ultimos 30 dias</h2>
+        <h2><i class="fas fa-chart-area"></i> Visitas ao Site – Últimos 30 dias</h2>
         <div style="display:flex;gap:16px;font-size:.82rem;color:var(--text-light);">
-            <span><i class="fas fa-calendar-alt" style="color:var(--primary)"></i> Este mes: <strong style="color:var(--text)"><?= number_format($visitasMes) ?></strong></span>
+            <span><i class="fas fa-calendar-alt" style="color:var(--primary)"></i> Este mês: <strong style="color:var(--text)"><?= number_format($visitasMes) ?></strong></span>
             <span><i class="fas fa-globe" style="color:var(--primary)"></i> Total: <strong style="color:var(--text)"><?= number_format($visitasTotal) ?></strong></span>
         </div>
     </div>
@@ -134,7 +132,7 @@ $maxVal      = max(array_column($ultimos30, 'val') ?: [1]);
                     ?>
                     <tr>
                         <td style="white-space:nowrap;"><?= date('d/m/Y', strtotime($d['date'])) ?></td>
-                        <td style="color:var(--text-light);"><?= date('D', strtotime($d['date'])) ?></td>
+                        <td style="color:var(--text-light);"><?= DIAS_PT[date('D', strtotime($d['date']))] ?></td>
                         <td style="text-align:right;">
                             <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;">
                                 <div style="width:50px;height:6px;background:var(--bg2);border-radius:3px;overflow:hidden;">
@@ -159,7 +157,7 @@ $maxVal      = max(array_column($ultimos30, 'val') ?: [1]);
     <!-- PROXIMAS CONSULTAS -->
     <div class="panel-card">
         <div class="panel-card-header">
-            <h2><i class="fas fa-stethoscope"></i> Proximas Consultas</h2>
+            <h2><i class="fas fa-stethoscope"></i> Próximas Consultas</h2>
             <a href="/pages/admin/agendamentos.php" class="btn btn-outline btn-sm">Ver todos</a>
         </div>
         <div class="panel-card-body" style="padding:0;">
@@ -167,14 +165,14 @@ $maxVal      = max(array_column($ultimos30, 'val') ?: [1]);
                 <p style="padding:24px;color:var(--text-light);font-size:.88rem;">Nenhuma consulta agendada.</p>
             <?php else: ?>
             <table class="data-table" style="font-size:.83rem;">
-                <thead><tr><th>Data</th><th>Paciente</th><th>Servico</th><th>Status</th></tr></thead>
+                <thead><tr><th>Data</th><th>Paciente</th><th>Serviço</th><th>Status</th></tr></thead>
                 <tbody>
                 <?php foreach ($proxConsultas as $a): ?>
                 <tr>
-                    <td><?= date('d/m', strtotime($a['data'])) ?><br><small style="color:var(--text-light)"><?= $a['horario'] ?? '' ?></small></td>
-                    <td><?= htmlspecialchars($a['nome']) ?><br><small style="color:var(--text-light)"><?= htmlspecialchars($a['pet_nome']) ?></small></td>
-                    <td style="font-size:.78rem;"><?= htmlspecialchars($a['servico'] ?? '') ?></td>
-                    <td><span class="badge badge-<?= $a['status'] ?>"><?= ucfirst($a['status']) ?></span></td>
+                    <td><?= date('d/m', strtotime($a['data'])) ?><br><small style="color:var(--text-light)"><?= e($a['horario'] ?? '') ?></small></td>
+                    <td><?= e($a['nome']) ?><br><small style="color:var(--text-light)"><?= e($a['pet_nome']) ?></small></td>
+                    <td style="font-size:.78rem;"><?= e($a['servico'] ?? '') ?></td>
+                    <td><span class="badge badge-<?= e($a['status']) ?>"><?= e(ucfirst($a['status'])) ?></span></td>
                 </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -186,7 +184,7 @@ $maxVal      = max(array_column($ultimos30, 'val') ?: [1]);
     <!-- PROXIMAS TOSAGENS -->
     <div class="panel-card">
         <div class="panel-card-header">
-            <h2><i class="fas fa-scissors"></i> Proximos Banho &amp; Tosa</h2>
+            <h2><i class="fas fa-scissors"></i> Próximos Banho &amp; Tosa</h2>
             <a href="/pages/admin/tosagem_list.php" class="btn btn-outline btn-sm">Ver todos</a>
         </div>
         <div class="panel-card-body" style="padding:0;">
@@ -194,14 +192,14 @@ $maxVal      = max(array_column($ultimos30, 'val') ?: [1]);
                 <p style="padding:24px;color:var(--text-light);font-size:.88rem;">Nenhuma tosa agendada.</p>
             <?php else: ?>
             <table class="data-table" style="font-size:.83rem;">
-                <thead><tr><th>Data</th><th>Tutor / Pet</th><th>Servico</th><th>Status</th></tr></thead>
+                <thead><tr><th>Data</th><th>Tutor / Pet</th><th>Serviço</th><th>Status</th></tr></thead>
                 <tbody>
                 <?php foreach ($proxTosas as $a): ?>
                 <tr>
-                    <td><?= date('d/m', strtotime($a['data'])) ?><br><small style="color:var(--text-light)"><?= $a['horario'] ?? '' ?></small></td>
-                    <td><?= htmlspecialchars($a['nome']) ?><br><small style="color:var(--text-light)"><?= htmlspecialchars($a['pet_nome']) ?></small></td>
-                    <td style="font-size:.78rem;"><?= htmlspecialchars($a['servico'] ?? '') ?></td>
-                    <td><span class="badge badge-<?= $a['status'] ?>"><?= ucfirst($a['status']) ?></span></td>
+                    <td><?= date('d/m', strtotime($a['data'])) ?><br><small style="color:var(--text-light)"><?= e($a['horario'] ?? '') ?></small></td>
+                    <td><?= e($a['nome']) ?><br><small style="color:var(--text-light)"><?= e($a['pet_nome']) ?></small></td>
+                    <td style="font-size:.78rem;"><?= e($a['servico'] ?? '') ?></td>
+                    <td><span class="badge badge-<?= e($a['status']) ?>"><?= e(ucfirst($a['status'])) ?></span></td>
                 </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -214,13 +212,13 @@ $maxVal      = max(array_column($ultimos30, 'val') ?: [1]);
 
 <!-- ATALHOS -->
 <div class="panel-card">
-    <div class="panel-card-header"><h2><i class="fas fa-link"></i> Atalhos Rapidos</h2></div>
+    <div class="panel-card-header"><h2><i class="fas fa-link"></i> Atalhos Rápidos</h2></div>
     <div class="panel-card-body" style="display:flex;gap:12px;flex-wrap:wrap;">
-        <a href="/pages/admin/horarios.php"    class="btn btn-outline"><i class="fas fa-clock"        style="color:var(--primary)"></i> Editar Horarios</a>
-        <a href="/pages/admin/precos.php"      class="btn btn-outline"><i class="fas fa-tags"         style="color:var(--primary)"></i> Editar Precos</a>
+        <a href="/pages/admin/horarios.php"    class="btn btn-outline"><i class="fas fa-clock"        style="color:var(--primary)"></i> Editar Horários</a>
+        <a href="/pages/admin/precos.php"      class="btn btn-outline"><i class="fas fa-tags"         style="color:var(--primary)"></i> Editar Preços</a>
         <a href="/pages/admin/mensagens.php"   class="btn btn-outline"><i class="fas fa-envelope"     style="color:var(--primary)"></i> Mensagens <?= $mensNaoLidas ? '<span class="badge badge-pendente">'.$mensNaoLidas.'</span>' : '' ?></a>
         <a href="/pages/admin/produtos.php"    class="btn btn-outline"><i class="fas fa-shopping-bag" style="color:var(--primary)"></i> Produtos da Loja</a>
-        <a href="/pages/admin/visitas.php"     class="btn btn-outline"><i class="fas fa-eye"          style="color:var(--primary)"></i> Relatorio de Visitas</a>
+        <a href="/pages/admin/visitas.php"     class="btn btn-outline"><i class="fas fa-eye"          style="color:var(--primary)"></i> Relatório de Visitas</a>
         <a href="/index.php" target="_blank"   class="btn btn-primary" style="margin-left:auto;"><i class="fas fa-external-link-alt"></i> Ver Site</a>
     </div>
 </div>

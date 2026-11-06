@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
     gql('mutation($id:bigint!){update_contatos_by_pk(pk_columns:{id:$id},_set:{lido:true}){id}}', ['id'=>(int)$_POST['id']]);
 }
 
-$filtro = $_GET['filtro'] ?? 'nao_lidas';
+$filtro = pick($_GET['filtro'] ?? 'nao_lidas', ['nao_lidas','todas'], 'nao_lidas');
 $where  = $filtro === 'nao_lidas' ? ',where:{lido:{_eq:false}}' : '';
 
 $q = gql('query { contatos(order_by:{criado_em:desc}'.$where.') { id nome email assunto mensagem lido criado_em } }');
@@ -28,7 +28,7 @@ $msgs = $q['data']['contatos'] ?? [];
 <?php  if (empty($msgs)): ?>
 <div class="panel-card">
     <div class="panel-card-body" style="text-align:center;padding:48px;color:var(--text-light);">
-        <?= !$q['ok'] ? '<i class="fas fa-plug" style="font-size:2rem;"></i><br>Nhost não configurado. Insira o Admin Secret em config.php.' : '<i class="fas fa-check-circle" style="font-size:2rem;color:var(--success)"></i><br>Nenhuma mensagem não lida!' ?>
+        <?= !$q['ok'] ? '<i class="fas fa-plug" style="font-size:2rem;"></i><br>Não foi possível consultar o banco de dados.' : '<i class="fas fa-check-circle" style="font-size:2rem;color:var(--success)"></i><br>Nenhuma mensagem não lida!' ?>
     </div>
 </div>
 <?php  else: ?>
@@ -38,31 +38,31 @@ $msgs = $q['data']['contatos'] ?? [];
         <div class="panel-card-body">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:12px;">
                 <div>
-                    <strong style="font-size:1rem;"><?= htmlspecialchars($m['nome']) ?></strong>
+                    <strong style="font-size:1rem;"><?= e($m['nome']) ?></strong>
                     <?php  if (!$m['lido']): ?><span class="badge badge-pendente" style="margin-left:8px;">Nova</span><?php  endif; ?>
                     <br>
                     <span style="font-size:.82rem;color:var(--text-light);">
-                        <i class="fas fa-envelope"></i> <?= htmlspecialchars($m['email']) ?>
+                        <i class="fas fa-envelope"></i> <?= e($m['email']) ?>
                         &nbsp;|&nbsp;
-                        <i class="fas fa-tag"></i> <?= htmlspecialchars($m['assunto'] ?: 'Sem assunto') ?>
+                        <i class="fas fa-tag"></i> <?= e($m['assunto'] ?: 'Sem assunto') ?>
                         &nbsp;|&nbsp;
                         <i class="fas fa-clock"></i> <?= date('d/m/Y H:i', strtotime($m['criado_em'])) ?>
                     </span>
                 </div>
                 <div style="display:flex;gap:8px;flex-shrink:0;">
-                    <a href="mailto:<?= htmlspecialchars($m['email']) ?>" class="btn btn-outline btn-sm">
+                    <a href="mailto:<?= e($m['email']) ?>" class="btn btn-outline btn-sm">
                         <i class="fas fa-reply"></i> Responder
                     </a>
                     <?php  if (!$m['lido']): ?>
                     <form method="POST" style="display:inline;">
-                        <input type="hidden" name="id" value="<?= $m['id'] ?>">
+                        <input type="hidden" name="id" value="<?= (int)$m['id'] ?>">
                         <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-check"></i> Marcar lida</button>
                     </form>
                     <?php  endif; ?>
                 </div>
             </div>
             <div style="background:var(--bg);padding:16px;border-radius:8px;font-size:.9rem;color:var(--text);line-height:1.6;">
-                <?= nl2br(htmlspecialchars($m['mensagem'])) ?>
+                <?= nl2br(e($m['mensagem'])) ?>
             </div>
         </div>
     </div>
