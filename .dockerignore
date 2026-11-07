@@ -3,3 +3,5 @@
 *.md
 includes/config.local.php
 .env
+.claude
+CLAUDE.md

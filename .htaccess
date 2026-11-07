@@ -9,7 +9,7 @@ ServerSignature Off
 
 RewriteEngine On
 # Pastas que nunca devem ser servidas diretamente
-RewriteRule ^(includes|data|\.git)(/|$) - [R=404,L]
+RewriteRule ^(includes|data|\.git|\.claude)(/|$) - [R=404,L]
 # setup do banco só roda via linha de comando
 RewriteRule ^api/setup_db\.php$ - [R=404,L]
 

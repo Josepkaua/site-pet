@@ -38,7 +38,7 @@ $baseUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="/assets/css/style.css?v=2">
+    <link rel="stylesheet" href="/assets/css/style.css?v=3">
     <script>document.documentElement.classList.add('js-reveal');</script>
 </head>
 <body class="<?= e($bodyClass ?? '') ?>">

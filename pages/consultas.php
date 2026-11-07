@@ -147,15 +147,15 @@ require __DIR__ . '/../includes/header.php';
                         </tbody>
                     </table>
                 </div>
-                <div class="form-card info-card reveal">
-                    <h4><i class="fas fa-info-circle"></i> Informações</h4>
+                <details class="form-card info-card acc reveal" open>
+                    <summary><h4><i class="fas fa-info-circle"></i> Informações</h4><i class="fas fa-chevron-down acc-arrow"></i></summary>
                     <ul class="check-list">
                         <li>Confirmação via WhatsApp em até 2h.</li>
                         <li>Traga a carteirinha de vacinas do pet.</li>
                         <li>Chegue 10 minutos antes.</li>
                         <li>Cancelamentos com 24h de antecedência.</li>
                     </ul>
-                </div>
+                </details>
                 <a href="<?= e(whats_link('Olá! Gostaria de agendar uma consulta.')) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-accent btn-block reveal">
                     <i class="fab fa-whatsapp"></i> Agendar pelo WhatsApp
                 </a>

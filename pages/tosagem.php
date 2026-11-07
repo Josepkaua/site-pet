@@ -65,6 +65,7 @@ require __DIR__ . '/../includes/header.php';
 <section class="page-hero">
     <h1 class="anim-up"><i class="fas fa-scissors"></i> Banho &amp; Tosa</h1>
     <p class="anim-up" style="--d:.1s">Seu pet limpo, cheiroso e com aquela carinha feliz que você ama.</p>
+    <a href="#agendar" class="btn btn-light btn-sm hero-jump anim-up" style="--d:.2s"><i class="fas fa-calendar-check"></i> Agendar agora</a>
 </section>
 
 <section class="section">
@@ -78,17 +79,18 @@ require __DIR__ . '/../includes/header.php';
 
         <div class="pricing-grid spaced" data-reveal-group>
             <?php $i = 0; foreach ($grupos as $titulo => [$emoji, $lista]): if (!$lista) continue; ?>
-            <div class="price-card reveal <?= $i++ === 1 ? 'featured' : '' ?>">
-                <div class="price-card-header">
+            <details class="price-card acc reveal <?= $i++ === 1 ? 'featured' : '' ?>" open>
+                <summary class="price-card-header">
                     <div class="category-icon" aria-hidden="true"><?= $emoji ?></div>
-                    <h3><?= e($titulo) ?></h3>
-                </div>
+                    <h3><?= e($titulo) ?> <small class="acc-count"><?= count($lista) ?> itens</small></h3>
+                    <i class="fas fa-chevron-down acc-arrow"></i>
+                </summary>
                 <table class="price-table">
                     <?php foreach ($lista as $it): ?>
                     <tr><td><?= e($it['servico']) ?></td><td><?= brl($it['preco']) ?></td></tr>
                     <?php endforeach; ?>
                 </table>
-            </div>
+            </details>
             <?php endforeach; ?>
         </div>
 
@@ -97,8 +99,8 @@ require __DIR__ . '/../includes/header.php';
             <h2>Horários de Atendimento</h2>
         </div>
         <div class="schedules-grid spaced" data-reveal-group>
-            <div class="schedule-card reveal">
-                <div class="schedule-card-header"><i class="fas fa-scissors"></i><h3>Banho &amp; Tosa – Horários</h3></div>
+            <details class="schedule-card acc reveal" open>
+                <summary class="schedule-card-header"><i class="fas fa-scissors"></i><h3>Horários</h3><i class="fas fa-chevron-down acc-arrow"></i></summary>
                 <table class="schedule-table">
                     <thead><tr><th>Dia</th><th>Abertura</th><th>Fechamento</th><th>Status</th></tr></thead>
                     <tbody>
@@ -112,9 +114,9 @@ require __DIR__ . '/../includes/header.php';
                     <?php endforeach; ?>
                     </tbody>
                 </table>
-            </div>
-            <div class="form-card info-card reveal">
-                <h4><i class="fas fa-info-circle"></i> Dicas Importantes</h4>
+            </details>
+            <details class="form-card info-card acc reveal" open>
+                <summary><h4><i class="fas fa-info-circle"></i> Dicas Importantes</h4><i class="fas fa-chevron-down acc-arrow"></i></summary>
                 <ul class="emoji-list">
                     <li><span>🐾</span> Leve o pet em jejum de pelo menos 2h antes do banho.</li>
                     <li><span>💉</span> Vacina antirrábica obrigatória e em dia.</li>
@@ -122,7 +124,7 @@ require __DIR__ . '/../includes/header.php';
                     <li><span>📱</span> Avisamos quando seu pet estiver pronto.</li>
                     <li><span>🐶</span> Agendamento obrigatório – sem hora marcada não atendemos.</li>
                 </ul>
-            </div>
+            </details>
         </div>
 
         <div class="section-header reveal" id="agendar">

@@ -328,6 +328,15 @@
     /* ---------------------------------------------------------
        INIT
        --------------------------------------------------------- */
-    const init = () => { initNav(); initCart(); initReveal(); initCounters(); initForms(); };
+    /* ---------------------------------------------------------
+       BLOCOS RECOLHÍVEIS: no celular começam fechados
+       (o visitante abre só o que quer ver, sem rolar a página toda)
+       --------------------------------------------------------- */
+    function initAccordions() {
+        if (!window.matchMedia('(max-width: 640px)').matches) return;
+        $$('details.acc').forEach((d) => { if (!d.hasAttribute('data-keep-open')) d.open = false; });
+    }
+
+    const init = () => { initAccordions(); initNav(); initCart(); initReveal(); initCounters(); initForms(); };
     document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();
 })();
