@@ -13,17 +13,17 @@ $msg = '';
 // Atualizar status
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'], $_POST['status'])) {
     $id     = (int)$_POST['id'];
-    $status = in_array($_POST['status'], ['pendente','confirmado','cancelado','concluido']) ? $_POST['status'] : 'pendente';
+    $status = in_array($_POST['status'], ['pendente','confirmado','cancelado','concluido'], true) ? $_POST['status'] : 'pendente';
     $r = gql('mutation($id:bigint!,$s:String!){update_agendamentos_by_pk(pk_columns:{id:$id},_set:{status:$s}){id}}',
              ['id'=>$id,'s'=>$status]);
     $msg = $r['ok'] ? 'success|Status atualizado!' : 'error|Erro ao atualizar.';
 }
 
-$filtro = $_GET['status'] ?? 'todos';
-$where  = $filtro !== 'todos' ? ',where:{status:{_eq:"'.$filtro.'"}}' : '';
+$filtro = pick($_GET['status'] ?? 'todos', ['todos','pendente','confirmado','cancelado','concluido'], 'todos');
+$where  = $filtro !== 'todos' ? ['status' => ['_eq' => $filtro]] : new stdClass();
 
-$q = gql('query { agendamentos(order_by:{data:asc,horario:asc}'.$where.') {
-    id nome telefone email pet_nome pet_especie servico data horario obs status criado_em } }');
+$q = gql('query($w: agendamentos_bool_exp!) { agendamentos(where:$w, order_by:{data:asc,horario:asc}) {
+    id nome telefone email pet_nome pet_especie servico data horario obs status criado_em } }', ['w' => $where]);
 $agendamentos = array_filter($q['data']['agendamentos'] ?? [], 'is_array');
 
 $statusList = ['todos'=>'Todos','pendente'=>'Pendentes','confirmado'=>'Confirmados','cancelado'=>'Cancelados','concluido'=>'Concluídos'];
@@ -31,7 +31,7 @@ $statusList = ['todos'=>'Todos','pendente'=>'Pendentes','confirmado'=>'Confirmad
 
 <?php  if ($msg): [$tipo,$texto] = explode('|',$msg,2); ?>
 <div class="alert alert-<?= $tipo === 'success' ? 'success' : 'error' ?>">
-    <i class="fas fa-<?= $tipo === 'success' ? 'check-circle' : 'exclamation-circle' ?>"></i> <?= $texto ?>
+    <i class="fas fa-<?= $tipo === 'success' ? 'check-circle' : 'exclamation-circle' ?>"></i> <?= e($texto) ?>
 </div>
 <?php  endif; ?>
 
@@ -50,7 +50,7 @@ $statusList = ['todos'=>'Todos','pendente'=>'Pendentes','confirmado'=>'Confirmad
         <?php  if (empty($agendamentos)): ?>
             <p style="padding:32px;text-align:center;color:var(--text-light);">
                 <?php  if (!$q['ok']): ?>
-                    <i class="fas fa-plug"></i> Nhost não configurado. Insira o Admin Secret em <code>includes/config.php</code>.
+                    <i class="fas fa-plug"></i> Não foi possível consultar o banco de dados.
                 <?php  else: ?>
                     Nenhum agendamento encontrado.
                 <?php  endif; ?>
@@ -63,23 +63,23 @@ $statusList = ['todos'=>'Todos','pendente'=>'Pendentes','confirmado'=>'Confirmad
             <tbody>
             <?php  foreach ($agendamentos as $a): ?>
             <tr>
-                <td style="color:var(--text-light);">#<?= $a['id'] ?? '–' ?></td>
-                <td><?= $a['data'] ? date('d/m/Y', strtotime($a['data'])) : '–' ?><br><small style="color:var(--text-light);"><?= $a['horario'] ?? '–' ?></small></td>
-                <td><?= htmlspecialchars($a['nome'] ?? '') ?></td>
-                <td><?= htmlspecialchars($a['pet_nome'] ?? '') ?><br><small style="color:var(--text-light);"><?= htmlspecialchars($a['pet_especie'] ?? '') ?></small></td>
-                <td style="font-size:.82rem;"><?= htmlspecialchars($a['servico'] ?? '') ?></td>
+                <td style="color:var(--text-light);">#<?= (int)($a['id'] ?? 0) ?></td>
+                <td><?= $a['data'] ? date('d/m/Y', strtotime($a['data'])) : '–' ?><br><small style="color:var(--text-light);"><?= e($a['horario'] ?: '–') ?></small></td>
+                <td><?= e($a['nome'] ?? '') ?></td>
+                <td><?= e($a['pet_nome'] ?? '') ?><br><small style="color:var(--text-light);"><?= e($a['pet_especie'] ?? '') ?></small></td>
+                <td style="font-size:.82rem;"><?= e($a['servico'] ?? '') ?><?php if (!empty($a['obs'])): ?><br><small class="obs-note" title="<?= e($a['obs']) ?>"><i class="fas fa-comment-medical"></i> <?= e(mb_strimwidth(html_entity_decode($a['obs']), 0, 60, '…')) ?></small><?php endif; ?></td>
                 <td style="font-size:.8rem;">
-                    <?= htmlspecialchars($a['telefone'] ?? '') ?><br>
+                    <?= e($a['telefone'] ?? '') ?><br>
                     <?php  if (!empty($a['telefone'])): ?>
                     <a href="https://wa.me/55<?= preg_replace('/\D/', '', $a['telefone'] ?? '') ?>" target="_blank" style="color:#25d366;">
                         <i class="fab fa-whatsapp"></i> WhatsApp
                     </a>
                     <?php  endif; ?>
                 </td>
-                <td><span class="badge badge-<?= $a['status'] ?? 'pendente' ?>"><?= ucfirst($a['status'] ?? 'pendente') ?></span></td>
+                <td><span class="badge badge-<?= e($a['status'] ?? 'pendente') ?>"><?= e(ucfirst($a['status'] ?? 'pendente')) ?></span></td>
                 <td>
                     <form method="POST" style="display:flex;gap:6px;align-items:center;">
-                        <input type="hidden" name="id" value="<?= $a['id'] ?? '' ?>">
+                        <input type="hidden" name="id" value="<?= (int)($a['id'] ?? 0) ?>">
                         <select name="status" style="font-size:.78rem;padding:4px 6px;border-radius:6px;border:1.5px solid #ddd;">
                             <option value="pendente"   <?= $a['status']==='pendente'   ?'selected':'' ?>>Pendente</option>
                             <option value="confirmado" <?= $a['status']==='confirmado' ?'selected':'' ?>>Confirmado</option>

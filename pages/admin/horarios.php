@@ -4,50 +4,61 @@ require_once __DIR__ . '/../../includes/auth.php';
 auth_admin();
 
 $adminPage  = 'horarios';
-$adminTitle = 'Horarios de Atendimento';
-$adminSub   = 'Edite os horarios que aparecem no site para os clientes';
+$adminTitle = 'Horários de Atendimento';
+$adminSub   = 'Edite os horários que aparecem no site para os clientes';
 require_once __DIR__ . '/../../includes/admin_layout.php';
 
-$file     = __DIR__ . '/../../data/horarios.json';
-$horarios = json_decode(file_get_contents($file), true);
+$horarios = horarios();
 $success  = $error = '';
 
+// Aceita só HH:MM válido
+$hhmm = fn($v) => (is_string($v) && preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $v)) ? $v : '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $tipo = $_POST['tipo'] ?? '';
-    if (in_array($tipo, ['consultas','tosagem'])) {
-        $rows = [];
-        foreach ($_POST['dia'] as $i => $dia) {
-            $rows[] = [
-                'dia'       => htmlspecialchars($dia, ENT_QUOTES),
-                'abertura'  => htmlspecialchars($_POST['abertura'][$i]  ?? '', ENT_QUOTES),
-                'fechamento'=> htmlspecialchars($_POST['fechamento'][$i] ?? '', ENT_QUOTES),
-                'status'    => htmlspecialchars($_POST['status'][$i]    ?? 'aberto', ENT_QUOTES),
-            ];
+    $tipo = pick($_POST['tipo'] ?? '', ['consultas', 'tosagem', 'urgencia']);
+    $ab   = (array)($_POST['abertura']   ?? []);
+    $fe   = (array)($_POST['fechamento'] ?? []);
+    $st   = (array)($_POST['status']     ?? []);
+    $invalido = false;
+
+    // Os nomes dos dias/períodos vêm do arquivo, não do formulário (não podem ser adulterados).
+    // Os campos usam índice explícito (abertura[3]) para não desalinhar quando um dia está "fechado".
+    if ($tipo === 'consultas' || $tipo === 'tosagem') {
+        foreach ($horarios[$tipo] as $i => &$row) {
+            $row['status'] = pick($st[$i] ?? '', ['aberto', 'limitado', 'fechado'], $row['status'] ?? 'aberto');
+            if ($row['status'] === 'fechado') {
+                $row['abertura'] = $row['fechamento'] = '';
+                continue;
+            }
+            $row['abertura']   = $hhmm($ab[$i] ?? '');
+            $row['fechamento'] = $hhmm($fe[$i] ?? '');
+            if (!$row['abertura'] || !$row['fechamento'] || $row['abertura'] >= $row['fechamento']) $invalido = $row['dia'];
         }
-        $horarios[$tipo] = $rows;
-    }
-    if ($tipo === 'urgencia') {
-        $rows = [];
-        foreach ($_POST['periodo'] as $i => $p) {
-            $rows[] = [
-                'periodo'   => htmlspecialchars($p, ENT_QUOTES),
-                'abertura'  => htmlspecialchars($_POST['abertura'][$i]  ?? '', ENT_QUOTES),
-                'fechamento'=> htmlspecialchars($_POST['fechamento'][$i] ?? '', ENT_QUOTES),
-            ];
+        unset($row);
+    } elseif ($tipo === 'urgencia') {
+        foreach ($horarios['urgencia'] as $i => &$row) {
+            $row['abertura']   = $hhmm($ab[$i] ?? '');
+            $row['fechamento'] = $hhmm($fe[$i] ?? '');
+            if (!$row['abertura'] || !$row['fechamento']) $invalido = $row['periodo'];
         }
-        $horarios['urgencia'] = $rows;
+        unset($row);
     }
-    if (file_put_contents($file, json_encode($horarios, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE))) {
-        $success = 'Horarios atualizados! O site ja reflete as mudancas.';
-        $horarios = json_decode(file_get_contents($file), true);
+
+    if (!$tipo) {
+        $error = 'Formulário inválido.';
+    } elseif ($invalido) {
+        $error = 'Verifique os horários de "' . $invalido . '": a abertura deve ser antes do fechamento.';
+        $horarios = horarios();
+    } elseif (save_json('horarios', $horarios)) {
+        $success = 'Horários atualizados! O site já reflete as mudanças.';
     } else {
-        $error = 'Erro ao salvar. Verifique as permissoes da pasta data/.';
+        $error = 'Erro ao salvar. Verifique as permissões da pasta data/.';
     }
 }
 ?>
 
-<?php if ($success): ?><div class="alert alert-success"><i class="fas fa-check-circle"></i> <?= $success ?></div><?php endif; ?>
-<?php if ($error):   ?><div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <?= $error ?></div><?php endif; ?>
+<?php if ($success): ?><div class="alert alert-success"><i class="fas fa-check-circle"></i> <?= e($success) ?></div><?php endif; ?>
+<?php if ($error):   ?><div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <?= e($error) ?></div><?php endif; ?>
 
 <style>
 .hor-hd{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-bottom:16px;border-bottom:2px solid var(--bg2);}
@@ -57,6 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 .hor-thead{display:grid;grid-template-columns:190px 1fr 1fr 170px;gap:0;background:var(--bg2);border-radius:10px 10px 0 0;padding:9px 18px;margin-bottom:3px;}
 .hor-thead span{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-light);}
 .hor-row{display:grid;grid-template-columns:190px 1fr 1fr 170px;gap:0;align-items:center;background:#fff;border-radius:10px;padding:13px 18px;margin-bottom:5px;box-shadow:0 2px 8px rgba(0,0,0,.04);border:1.5px solid transparent;transition:.2s;}
+.hor-row-purple:hover{border-color:#8e44ad!important;}
 .hor-row:hover{border-color:var(--primary);box-shadow:0 4px 18px rgba(46,158,107,.12);}
 .hor-day{display:flex;align-items:center;gap:10px;font-weight:600;font-size:.9rem;}
 .hor-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
@@ -74,6 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 .urg-thead span{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#922b21;}
 .urg-row{display:grid;grid-template-columns:190px 1fr 1fr;gap:0;align-items:center;background:#fff;border-radius:10px;padding:13px 18px;margin-bottom:5px;box-shadow:0 2px 8px rgba(0,0,0,.04);border:1.5px solid transparent;transition:.2s;}
 .urg-row:hover{border-color:#e74c3c;}
+@media(max-width:1200px){.hor-thead,.urg-thead{display:none;}.hor-row,.urg-row{grid-template-columns:1fr 1fr;gap:10px;}.hor-day{grid-column:1/-1;}}
 @media(max-width:680px){
     .hor-thead,.hor-row,.urg-thead,.urg-row{grid-template-columns:1fr;gap:10px;}
 }
@@ -87,8 +100,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <i class="fas fa-stethoscope"></i>
             </div>
             <div>
-                <h2>Horarios de Consultas</h2>
-                <p>Atendimento veterinario – configure abertura, fechamento e status por dia</p>
+                <h2>Horários de Consultas</h2>
+                <p>Atendimento veterinário – configure abertura, fechamento e status por dia</p>
             </div>
         </div>
         <form method="POST">
@@ -96,23 +109,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="hor-thead">
                 <span>Dia da Semana</span><span>Abertura</span><span>Fechamento</span><span>Status</span>
             </div>
-            <?php foreach ($horarios['consultas'] as $row):
+            <?php foreach ($horarios['consultas'] as $i => $row):
                 $st = $row['status'] ?? 'aberto';
                 $dc = $st==='aberto'?'#27ae60':($st==='limitado'?'#f39c12':'#e74c3c');
             ?>
             <div class="hor-row">
                 <div class="hor-day">
                     <span class="hor-dot" style="background:<?= $dc ?>"></span>
-                    <input type="hidden" name="dia[]" value="<?= htmlspecialchars($row['dia']) ?>">
-                    <?= htmlspecialchars($row['dia']) ?>
+                                        <?= e($row['dia']) ?>
                 </div>
                 <div class="t-wrap"><i class="fas fa-sun"></i>
-                    <input type="time" name="abertura[]" value="<?= $row['abertura'] ?>" <?= $st==='fechado'?'disabled':'' ?>>
+                    <input type="time" name="abertura[<?= $i ?>]" value="<?= e($row['abertura']) ?>" <?= $st==='fechado'?'disabled':'' ?>>
                 </div>
                 <div class="t-wrap"><i class="fas fa-moon"></i>
-                    <input type="time" name="fechamento[]" value="<?= $row['fechamento'] ?>" <?= $st==='fechado'?'disabled':'' ?>>
+                    <input type="time" name="fechamento[<?= $i ?>]" value="<?= e($row['fechamento']) ?>" <?= $st==='fechado'?'disabled':'' ?>>
                 </div>
-                <select name="status[]" class="st-sel s-<?= $st ?>" onchange="syncRow(this)">
+                <select name="status[<?= $i ?>]" class="st-sel s-<?= e($st) ?>" onchange="syncRow(this)">
                     <option value="aberto"   <?= $st==='aberto'   ?'selected':'' ?>>✅ Aberto</option>
                     <option value="limitado" <?= $st==='limitado' ?'selected':'' ?>>⚠️ Limitado</option>
                     <option value="fechado"  <?= $st==='fechado'  ?'selected':'' ?>>🔴 Fechado</option>
@@ -120,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <?php endforeach; ?>
             <div class="hor-foot">
-                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Salvar Horarios de Consulta</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Salvar Horários de Consulta</button>
             </div>
         </form>
     </div>
@@ -134,8 +146,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <i class="fas fa-scissors"></i>
             </div>
             <div>
-                <h2>Horarios de Banho &amp; Tosa</h2>
-                <p>Servico de estetica pet – configure disponibilidade por dia</p>
+                <h2>Horários de Banho &amp; Tosa</h2>
+                <p>Serviço de estética pet – configure disponibilidade por dia</p>
             </div>
         </div>
         <form method="POST">
@@ -146,23 +158,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <span style="color:#6c3483;">Fechamento</span>
                 <span style="color:#6c3483;">Status</span>
             </div>
-            <?php foreach ($horarios['tosagem'] as $row):
+            <?php foreach ($horarios['tosagem'] as $i => $row):
                 $st = $row['status'] ?? 'aberto';
                 $dc = $st==='aberto'?'#27ae60':($st==='limitado'?'#f39c12':'#e74c3c');
             ?>
-            <div class="hor-row" style="--hover-c:#8e44ad;" onmouseover="this.style.borderColor='#8e44ad'" onmouseout="this.style.borderColor='transparent'">
+            <div class="hor-row hor-row-purple">
                 <div class="hor-day">
                     <span class="hor-dot" style="background:<?= $dc ?>"></span>
-                    <input type="hidden" name="dia[]" value="<?= htmlspecialchars($row['dia']) ?>">
-                    <?= htmlspecialchars($row['dia']) ?>
+                                        <?= e($row['dia']) ?>
                 </div>
                 <div class="t-wrap"><i class="fas fa-sun"></i>
-                    <input type="time" name="abertura[]" value="<?= $row['abertura'] ?>" <?= $st==='fechado'?'disabled':'' ?>>
+                    <input type="time" name="abertura[<?= $i ?>]" value="<?= e($row['abertura']) ?>" <?= $st==='fechado'?'disabled':'' ?>>
                 </div>
                 <div class="t-wrap"><i class="fas fa-moon"></i>
-                    <input type="time" name="fechamento[]" value="<?= $row['fechamento'] ?>" <?= $st==='fechado'?'disabled':'' ?>>
+                    <input type="time" name="fechamento[<?= $i ?>]" value="<?= e($row['fechamento']) ?>" <?= $st==='fechado'?'disabled':'' ?>>
                 </div>
-                <select name="status[]" class="st-sel s-<?= $st ?>" onchange="syncRow(this)">
+                <select name="status[<?= $i ?>]" class="st-sel s-<?= e($st) ?>" onchange="syncRow(this)">
                     <option value="aberto"   <?= $st==='aberto'   ?'selected':'' ?>>✅ Aberto</option>
                     <option value="limitado" <?= $st==='limitado' ?'selected':'' ?>>⚠️ Limitado</option>
                     <option value="fechado"  <?= $st==='fechado'  ?'selected':'' ?>>🔴 Fechado</option>
@@ -171,7 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endforeach; ?>
             <div class="hor-foot">
                 <button type="submit" class="btn btn-primary" style="background:linear-gradient(135deg,#8e44ad,#6c3483);box-shadow:0 4px 16px rgba(142,68,173,.35);">
-                    <i class="fas fa-save"></i> Salvar Horarios de Tosa
+                    <i class="fas fa-save"></i> Salvar Horários de Tosa
                 </button>
             </div>
         </form>
@@ -186,33 +197,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <i class="fas fa-ambulance"></i>
             </div>
             <div>
-                <h2>Horarios de Urgencia</h2>
-                <p>Atendimento emergencial – periodos disponiveis</p>
+                <h2>Horários de Urgência</h2>
+                <p>Atendimento emergencial – períodos disponíveis</p>
             </div>
         </div>
         <form method="POST">
             <input type="hidden" name="tipo" value="urgencia">
             <div class="urg-thead">
-                <span>Periodo</span><span>Abertura</span><span>Fechamento</span>
+                <span>Período</span><span>Abertura</span><span>Fechamento</span>
             </div>
-            <?php foreach ($horarios['urgencia'] as $row): ?>
+            <?php foreach ($horarios['urgencia'] as $i => $row): ?>
             <div class="urg-row">
                 <div class="hor-day">
                     <span class="hor-dot" style="background:#e74c3c;"></span>
-                    <input type="hidden" name="periodo[]" value="<?= htmlspecialchars($row['periodo']) ?>">
-                    <?= htmlspecialchars($row['periodo']) ?>
+                                        <?= e($row['periodo']) ?>
                 </div>
                 <div class="t-wrap"><i class="fas fa-sun"></i>
-                    <input type="time" name="abertura[]" value="<?= $row['abertura'] ?>">
+                    <input type="time" name="abertura[<?= $i ?>]" value="<?= e($row['abertura']) ?>">
                 </div>
                 <div class="t-wrap"><i class="fas fa-moon"></i>
-                    <input type="time" name="fechamento[]" value="<?= $row['fechamento'] ?>">
+                    <input type="time" name="fechamento[<?= $i ?>]" value="<?= e($row['fechamento']) ?>">
                 </div>
             </div>
             <?php endforeach; ?>
             <div class="hor-foot">
                 <button type="submit" class="btn btn-primary" style="background:linear-gradient(135deg,#e74c3c,#c0392b);box-shadow:0 4px 16px rgba(231,76,60,.35);">
-                    <i class="fas fa-save"></i> Salvar Horarios de Urgencia
+                    <i class="fas fa-save"></i> Salvar Horários de Urgência
                 </button>
             </div>
         </form>

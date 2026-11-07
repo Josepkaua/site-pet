@@ -11,22 +11,22 @@ require_once __DIR__ . '/../../includes/admin_layout.php';
 $msg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'], $_POST['status'])) {
     $id     = (int)$_POST['id'];
-    $status = in_array($_POST['status'], ['pendente','confirmado','cancelado','concluido']) ? $_POST['status'] : 'pendente';
+    $status = in_array($_POST['status'], ['pendente','confirmado','cancelado','concluido'], true) ? $_POST['status'] : 'pendente';
     $r = gql('mutation($id:bigint!,$s:String!){update_tosagem_agendamentos_by_pk(pk_columns:{id:$id},_set:{status:$s}){id}}',
              ['id'=>$id,'s'=>$status]);
     $msg = $r['ok'] ? 'success|Status atualizado!' : 'error|Erro ao atualizar.';
 }
 
-$filtro = $_GET['status'] ?? 'todos';
-$where  = $filtro !== 'todos' ? ',where:{status:{_eq:"'.$filtro.'"}}' : '';
+$filtro = pick($_GET['status'] ?? 'todos', ['todos','pendente','confirmado','cancelado','concluido'], 'todos');
+$where  = $filtro !== 'todos' ? ['status' => ['_eq' => $filtro]] : new stdClass();
 
-$q = gql('query { tosagem_agendamentos(order_by:{data:asc}'.$where.') {
-    id nome telefone pet_nome pet_raca pet_porte servico data horario status criado_em } }');
+$q = gql('query($w: tosagem_agendamentos_bool_exp!) { tosagem_agendamentos(where:$w, order_by:{data:asc}) {
+    id nome telefone pet_nome pet_raca pet_porte servico data horario status criado_em } }', ['w' => $where]);
 $lista = $q['data']['tosagem_agendamentos'] ?? [];
 ?>
 
 <?php  if ($msg): [$tipo,$texto] = explode('|',$msg,2); ?>
-<div class="alert alert-<?= $tipo==='success'?'success':'error' ?>"><i class="fas fa-check-circle"></i> <?= $texto ?></div>
+<div class="alert alert-<?= $tipo==='success'?'success':'error' ?>"><i class="fas fa-check-circle"></i> <?= e($texto) ?></div>
 <?php  endif; ?>
 
 <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
@@ -39,7 +39,7 @@ $lista = $q['data']['tosagem_agendamentos'] ?? [];
     <div class="panel-card-body" style="padding:0;overflow-x:auto;">
         <?php  if (empty($lista)): ?>
             <p style="padding:32px;text-align:center;color:var(--text-light);">
-                <?= !$q['ok'] ? '<i class="fas fa-plug"></i> Nhost não configurado.' : 'Nenhum agendamento encontrado.' ?>
+                <?= !$q['ok'] ? '<i class="fas fa-plug"></i> Não foi possível consultar o banco de dados.' : 'Nenhum agendamento encontrado.' ?>
             </p>
         <?php  else: ?>
         <table class="data-table">
@@ -47,21 +47,21 @@ $lista = $q['data']['tosagem_agendamentos'] ?? [];
             <tbody>
             <?php  foreach ($lista as $a): ?>
             <tr>
-                <td style="color:var(--text-light);">#<?= $a['id'] ?></td>
-                <td><?= date('d/m/Y', strtotime($a['data'])) ?><br><small><?= $a['horario'] ?: '–' ?></small></td>
-                <td><?= htmlspecialchars($a['nome']) ?></td>
-                <td><?= htmlspecialchars($a['pet_nome']) ?><br><small><?= htmlspecialchars($a['pet_raca'] ?: '') ?></small></td>
-                <td style="font-size:.82rem;"><?= htmlspecialchars($a['pet_porte'] ?: '–') ?></td>
-                <td style="font-size:.82rem;"><?= htmlspecialchars($a['servico']) ?></td>
+                <td style="color:var(--text-light);">#<?= (int)$a['id'] ?></td>
+                <td><?= date('d/m/Y', strtotime($a['data'])) ?><br><small><?= e($a['horario'] ?: '–') ?></small></td>
+                <td><?= e($a['nome']) ?></td>
+                <td><?= e($a['pet_nome']) ?><br><small><?= e($a['pet_raca'] ?: '') ?></small></td>
+                <td style="font-size:.82rem;"><?= e($a['pet_porte'] ?: '–') ?></td>
+                <td style="font-size:.82rem;"><?= e($a['servico']) ?></td>
                 <td>
                     <a href="https://wa.me/55<?= preg_replace('/\D/','',$a['telefone']) ?>" target="_blank" style="color:#25d366;font-size:.82rem;">
-                        <i class="fab fa-whatsapp"></i> <?= htmlspecialchars($a['telefone']) ?>
+                        <i class="fab fa-whatsapp"></i> <?= e($a['telefone']) ?>
                     </a>
                 </td>
-                <td><span class="badge badge-<?= $a['status'] ?>"><?= ucfirst($a['status']) ?></span></td>
+                <td><span class="badge badge-<?= e($a['status']) ?>"><?= e(ucfirst($a['status'])) ?></span></td>
                 <td>
                     <form method="POST" style="display:flex;gap:6px;">
-                        <input type="hidden" name="id" value="<?= $a['id'] ?>">
+                        <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
                         <select name="status" style="font-size:.78rem;padding:4px 6px;border-radius:6px;border:1.5px solid #ddd;">
                             <option value="pendente"   <?= $a['status']==='pendente'   ?'selected':'' ?>>Pendente</option>
                             <option value="confirmado" <?= $a['status']==='confirmado' ?'selected':'' ?>>Confirmado</option>
