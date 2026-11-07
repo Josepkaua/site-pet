@@ -24,6 +24,11 @@ require __DIR__ . '/../includes/header.php';
 <section class="page-hero">
     <h1 class="anim-up"><i class="fas fa-stethoscope"></i> Nossos Serviços</h1>
     <p class="anim-up" style="--d:.1s">Tudo o que o seu pet precisa, com qualidade e carinho profissional.</p>
+    <nav class="page-jump anim-up" style="--d:.2s" aria-label="Nesta página">
+        <a href="#horarios"><i class="fas fa-clock"></i> Horários</a>
+        <a href="#precos"><i class="fas fa-tags"></i> Preços</a>
+        <a href="/pages/consultas.php"><i class="fas fa-calendar-check"></i> Agendar</a>
+    </nav>
 </section>
 
 <section class="section">
@@ -60,8 +65,8 @@ require __DIR__ . '/../includes/header.php';
         </div>
         <div class="schedules-grid" data-reveal-group>
             <?php foreach (['consultas' => ['fa-stethoscope', 'Consultas Veterinárias'], 'tosagem' => ['fa-scissors', 'Banho & Tosa']] as $tipo => [$icon, $titulo]): ?>
-            <div class="schedule-card reveal">
-                <div class="schedule-card-header"><i class="fas <?= $icon ?>"></i><h3><?= e($titulo) ?></h3></div>
+            <details class="schedule-card acc reveal" open>
+                <summary class="schedule-card-header"><i class="fas <?= $icon ?>"></i><h3><?= e($titulo) ?></h3><i class="fas fa-chevron-down acc-arrow"></i></summary>
                 <table class="schedule-table">
                     <thead><tr><th>Dia</th><th>Horário</th><th>Status</th></tr></thead>
                     <tbody>
@@ -75,11 +80,11 @@ require __DIR__ . '/../includes/header.php';
                     <?php endforeach; ?>
                     </tbody>
                 </table>
-            </div>
+            </details>
             <?php endforeach; ?>
 
-            <div class="schedule-card schedule-card-urgent reveal">
-                <div class="schedule-card-header"><i class="fas fa-truck-medical"></i><h3>Urgência</h3></div>
+            <details class="schedule-card schedule-card-urgent acc reveal" open>
+                <summary class="schedule-card-header"><i class="fas fa-truck-medical"></i><h3>Urgência</h3><i class="fas fa-chevron-down acc-arrow"></i></summary>
                 <table class="schedule-table">
                     <thead><tr><th>Período</th><th>Horário</th><th>Contato</th></tr></thead>
                     <tbody>
@@ -92,7 +97,7 @@ require __DIR__ . '/../includes/header.php';
                     <?php endforeach; ?>
                     </tbody>
                 </table>
-            </div>
+            </details>
         </div>
     </div>
 </section>
@@ -106,17 +111,18 @@ require __DIR__ . '/../includes/header.php';
         </div>
         <div class="pricing-grid" data-reveal-group>
             <?php foreach (precos_secoes() as $i => $sec): if (empty($sec['itens'])) continue; ?>
-            <div class="price-card reveal <?= $i === 1 ? 'featured' : '' ?>" style="--sec:<?= e($sec['color'] ?? '#2e9e6b') ?>">
-                <div class="price-card-header">
+            <details class="price-card acc reveal <?= $i === 1 ? 'featured' : '' ?>" style="--sec:<?= e($sec['color'] ?? '#2e9e6b') ?>" open>
+                <summary class="price-card-header">
                     <div class="category-icon"><i class="fas fa-<?= e($sec['icon'] ?? 'list') ?>"></i></div>
-                    <h3><?= e($sec['titulo']) ?></h3>
-                </div>
+                    <h3><?= e($sec['titulo']) ?> <small class="acc-count"><?= count($sec['itens']) ?> itens</small></h3>
+                    <i class="fas fa-chevron-down acc-arrow"></i>
+                </summary>
                 <table class="price-table">
                     <?php foreach ($sec['itens'] as $it): ?>
                     <tr><td><?= e($it['servico']) ?></td><td><?= brl($it['preco']) ?></td></tr>
                     <?php endforeach; ?>
                 </table>
-            </div>
+            </details>
             <?php endforeach; ?>
         </div>
     </div>

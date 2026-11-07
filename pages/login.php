@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="icon" type="image/svg+xml" href="/assets/images/favicon.svg">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="/assets/css/style.css?v=2">
+    <link rel="stylesheet" href="/assets/css/style.css?v=3">
 </head>
 <body class="login-page">
 <div class="login-bg" aria-hidden="true">
@@ -75,6 +75,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </span>
     </div>
 </main>
-<script src="/assets/js/main.js?v=2"></script>
+<script src="/assets/js/main.js?v=3"></script>
 </body>
 </html>

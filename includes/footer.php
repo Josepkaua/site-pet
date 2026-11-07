@@ -49,6 +49,6 @@
 <button class="back-to-top" id="backToTop" type="button" aria-label="Voltar ao topo"><i class="fas fa-arrow-up"></i></button>
 <div class="toast-stack" id="toastStack" aria-live="polite"></div>
 
-<script src="/assets/js/main.js?v=2" data-whats="<?= e(CLINIC_WHATS) ?>"></script>
+<script src="/assets/js/main.js?v=3" data-whats="<?= e(CLINIC_WHATS) ?>"></script>
 </body>
 </html>

@@ -122,7 +122,7 @@ require __DIR__ . '/includes/header.php';
             <h2>Produtos em Destaque</h2>
             <p>Os favoritos da nossa loja — qualidade garantida para o seu pet</p>
         </div>
-        <div class="dest-grid" data-reveal-group>
+        <div class="dest-grid scroll-strip" data-reveal-group>
             <?php foreach ($destaques as $p):
                 $vis = product_visual($p['nome'], $p['categoria'] ?? '');
             ?>
