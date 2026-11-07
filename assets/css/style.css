@@ -769,3 +769,29 @@ button { font-family: inherit; }
     .back-to-top { right: 20px; bottom: 80px; }
     .login-card { padding: 34px 24px; }
 }
+
+/* 18 ── CORREÇÕES DE RESPONSIVIDADE ───────────────────────────────────── */
+/* Itens de grid não podem ficar mais largos que a coluna */
+.split-layout > *, .about-section > *, .hero-container > *, .footer-container > *,
+.form-grid > *, .schedules-grid > *, .pricing-grid > * { min-width: 0; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; min-width: 0; }
+/* Tabelas largas rolam dentro do cartão em vez de empurrar a página */
+.schedule-card, .price-card { overflow-x: auto; }
+/* Animação lateral não pode criar rolagem horizontal */
+main { overflow-x: clip; }
+@media (max-width: 1100px) { .split-layout { grid-template-columns: 1fr 320px; gap: 28px; } }
+@media (max-width: 960px)  { .split-layout { grid-template-columns: 1fr; } }
+@media (max-width: 640px) {
+    .schedules-grid, .pricing-grid { grid-template-columns: 1fr; }
+    .schedule-table th, .schedule-table td { padding: 10px 10px; font-size: .82rem; }
+    .price-table td { padding: 10px 14px; }
+    .about-image img, .about-image::before { width: 100%; max-width: 300px; height: auto; aspect-ratio: 5 / 6; }
+    .hero-content h1 { font-size: 1.85rem; }
+}
+@media (max-width: 360px) {
+    .nav-logo span:last-child { display: none; }
+    .form-card { padding: 20px 14px; }
+    .dest-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+}
+
+body { overflow-wrap: break-word; }

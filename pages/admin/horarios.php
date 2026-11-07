@@ -86,6 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 .urg-thead span{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#922b21;}
 .urg-row{display:grid;grid-template-columns:190px 1fr 1fr;gap:0;align-items:center;background:#fff;border-radius:10px;padding:13px 18px;margin-bottom:5px;box-shadow:0 2px 8px rgba(0,0,0,.04);border:1.5px solid transparent;transition:.2s;}
 .urg-row:hover{border-color:#e74c3c;}
+@media(max-width:1200px){.hor-thead,.urg-thead{display:none;}.hor-row,.urg-row{grid-template-columns:1fr 1fr;gap:10px;}.hor-day{grid-column:1/-1;}}
 @media(max-width:680px){
     .hor-thead,.hor-row,.urg-thead,.urg-row{grid-template-columns:1fr;gap:10px;}
 }

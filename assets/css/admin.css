@@ -443,3 +443,26 @@ img { max-width: 100%; }
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ── Responsividade extra ───────────────────────────────────────── */
+.admin-main { min-width: 0; }
+.topbar-title { min-width: 0; flex: 1; }
+.topbar-title h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chart-bars { overflow-x: auto; }
+.panel-card { min-width: 0; }
+.form-row > * { min-width: 0; }
+@media (max-width: 768px) {
+    .topbar-actions { gap: 6px; flex-shrink: 0; }
+    .topbar-btn { padding: 8px 10px; }
+    .topbar-actions a[href="/index.php"] { display: none; }
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .panel-card-header { flex-wrap: wrap; gap: 8px; }
+    .chart-label { font-size: .5rem; }
+}
+@media (max-width: 380px) { .stats-grid { grid-template-columns: 1fr; } }
+body, td { overflow-wrap: anywhere; }
+.alert { align-items: flex-start; }
+.alert > i { margin-top: 3px; }
+.alert-warning, .page-content > .alert-error { display: block; line-height: 1.6; }
+.alert-warning > i, .page-content > .alert-error > i { margin-right: 6px; }
+.alert code { overflow-wrap: anywhere; }
